@@ -96,7 +96,38 @@ struct SpoonacularService {
 
         return try JSONDecoder().decode([IngredientSuggestion].self, from: data)
     }
+    func getRecipeDetails(id: Int) async throws -> RecipeDetails {
+        var components = URLComponents(
+            string: "https://api.spoonacular.com/recipes/\(id)/information"
+        )
 
+        components?.queryItems = [
+            URLQueryItem(name: "apiKey", value: apiKey),
+            URLQueryItem(name: "includeNutrition", value: "false")
+        ]
+
+        guard let url = components?.url else {
+            throw SpoonacularError.invalidURL
+        }
+
+        let (data, response) = try await session.data(from: url)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw SpoonacularError.requestFailed(statusCode: -1)
+        }
+
+        if httpResponse.statusCode == 402 {
+            throw SpoonacularError.quotaExceeded
+        }
+
+        guard (200..<300).contains(httpResponse.statusCode) else {
+            throw SpoonacularError.requestFailed(
+                statusCode: httpResponse.statusCode
+            )
+        }
+
+        return try JSONDecoder().decode(RecipeDetails.self, from: data)
+    }
     private func quota(from response: HTTPURLResponse) -> SpoonacularQuota? {
         guard
             let usedString = response.value(forHTTPHeaderField: "X-API-Quota-Used"),
