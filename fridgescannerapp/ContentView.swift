@@ -98,10 +98,25 @@ struct ContentView: View {
                 .foregroundStyle(.red)
                 .font(.footnote)
         }
-        List(model.results) { recipe in
-            RecipeRow(recipe: recipe)
+
+        if model.results.isEmpty && !model.isLoading {
+            ContentUnavailableView(
+                "No Recipes Yet",
+                systemImage: "fork.knife",
+                description: Text(
+                    "Add ingredients and tap Find Recipes to get started."
+                )
+            )
+        } else {
+            List(model.results) { recipe in
+                NavigationLink {
+                    RecipeDetailView(recipe: recipe)
+                } label: {
+                    RecipeRow(recipe: recipe)
+                }
+            }
+            .listStyle(.plain)
         }
-        .listStyle(.plain)
     }
 }
 
