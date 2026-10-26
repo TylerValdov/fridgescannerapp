@@ -25,3 +25,20 @@ struct RecipeMatch: Decodable, Identifiable, Hashable {
     let missedIngredients: [IngredientRef]
     let usedIngredients: [IngredientRef]
 }
+struct RecipeDetails: Decodable {
+    let id: Int
+    let title: String
+    let image: String?
+    let readyInMinutes: Int?
+    let servings: Int?
+    let summary: String?
+    let instructions: String?
+    let sourceUrl: String?
+    let extendedIngredients: [RecipeDetailIngredient]?
+}
+
+struct RecipeDetailIngredient: Decodable, Identifiable {
+    let original: String
+
+    var id: String { original }
+}
