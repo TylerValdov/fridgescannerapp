@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct fridgescannerappApp: App {
@@ -13,5 +14,6 @@ struct fridgescannerappApp: App {
         WindowGroup {
             ContentView()
         }
+        .modelContainer(for: PersistedIngredient.self)
     }
 }

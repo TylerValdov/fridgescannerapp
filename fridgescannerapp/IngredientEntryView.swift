@@ -1,22 +1,33 @@
 import SwiftUI
+import SwiftData
 
 // Lets users enter and manage ingredients they currently have.
 struct IngredientEntryView: View {
-    @State private var ingredientName = ""
-    @State private var ingredients: [String] = []
+    @Bindable var model: RecipeSearchModel
 
     var body: some View {
         Form {
             Section {
                 HStack {
-                    TextField("e.g. Tomatoes", text: $ingredientName)
+                    TextField("e.g. Tomatoes", text: $model.newIngredientText)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
                         .submitLabel(.done)
-                        .onSubmit(addIngredient)
+                        .onSubmit { model.addIngredient() }
+                        .onChange(of: model.newIngredientText) { _, _ in
+                            model.scheduleSuggestionsUpdate()
+                        }
 
-                    Button("Add", action: addIngredient)
-                        .disabled(ingredientName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    Button("Add", action: model.addIngredient)
+                        .disabled(model.newIngredientText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+
+                if !model.suggestions.isEmpty {
+                    ForEach(model.suggestions) { suggestion in
+                        Button(suggestion.name.capitalized) {
+                            model.selectSuggestion(suggestion)
+                        }
+                    }
                 }
             } header: {
                 Text("Add an Ingredient")
@@ -25,41 +36,27 @@ struct IngredientEntryView: View {
             }
 
             Section("My Ingredients") {
-                if ingredients.isEmpty {
+                if model.ingredients.isEmpty {
                     Text("No ingredients added yet.")
                         .foregroundStyle(.secondary)
                 } else {
-                    ForEach(ingredients, id: \.self) { ingredient in
-                        Text(ingredient)
+                    ForEach(model.ingredients, id: \.self) { ingredient in
+                        Text(ingredient.capitalized)
                     }
-                    .onDelete(perform: removeIngredients)
+                    .onDelete(perform: model.removeIngredients)
                 }
             }
         }
         .navigationTitle("My Ingredients")
     }
-
-    private func addIngredient() {
-        let name = ingredientName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return }
-
-        // Don't add the same ingredient twice, even with different capitalization.
-        guard !ingredients.contains(where: { $0.localizedCaseInsensitiveCompare(name) == .orderedSame }) else {
-            ingredientName = ""
-            return
-        }
-
-        ingredients.append(name)
-        ingredientName = ""
-    }
-
-    private func removeIngredients(at offsets: IndexSet) {
-        ingredients.remove(atOffsets: offsets)
-    }
 }
 
 #Preview {
+    let container = try! ModelContainer(
+        for: PersistedIngredient.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
     NavigationStack {
-        IngredientEntryView()
+        IngredientEntryView(model: RecipeSearchModel(context: container.mainContext))
     }
 }

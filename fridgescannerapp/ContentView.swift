@@ -6,75 +6,66 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct ContentView: View {
-    @State private var model = RecipeSearchModel()
+    @Environment(\.modelContext) private var modelContext
+    @State private var model: RecipeSearchModel?
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 12) {
-                ingredientInputRow
-                if !model.ingredients.isEmpty {
-                    ingredientChips
+            Group {
+                if let model {
+                    FridgeScannerContent(model: model)
+                } else {
+                    ProgressView()
+                        .task {
+                            if model == nil {
+                                model = RecipeSearchModel(context: modelContext)
+                            }
+                        }
                 }
-                searchButton
-                if let quotaLeft = model.quotaLeft {
-                    Text("Spoonacular points left today: \(Int(quotaLeft))")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                resultsSection
             }
-            .padding()
             .navigationTitle("Fridge Scanner")
         }
     }
+}
 
-    private var ingredientInputRow: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack {
-                TextField("Add an ingredient (e.g. eggs)", text: $model.newIngredientText)
-                    .textFieldStyle(.roundedBorder)
-                    .onSubmit { model.addIngredient() }
-                    .onChange(of: model.newIngredientText) { _, _ in
-                        model.scheduleSuggestionsUpdate()
-                    }
-                Button("Add") { model.addIngredient() }
-                    .disabled(model.newIngredientText.trimmingCharacters(in: .whitespaces).isEmpty)
+private struct FridgeScannerContent: View {
+    let model: RecipeSearchModel
+
+    var body: some View {
+        VStack(spacing: 12) {
+            ingredientsSummaryRow
+            searchButton
+            if let quotaLeft = model.quotaLeft {
+                Text("Spoonacular points left today: \(Int(quotaLeft))")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-            if !model.suggestions.isEmpty {
-                suggestionsList
+            resultsSection
+        }
+        .padding()
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                NavigationLink("Manage Ingredients") {
+                    IngredientEntryView(model: model)
+                }
             }
         }
     }
 
-    private var suggestionsList: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ForEach(model.suggestions) { suggestion in
-                Button {
-                    model.selectSuggestion(suggestion)
-                } label: {
-                    Text(suggestion.name.capitalized)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.vertical, 6)
-                        .padding(.horizontal, 10)
-                }
-                .buttonStyle(.plain)
-            }
+    private var ingredientsSummaryRow: some View {
+        HStack {
+            Image(systemName: "carrot")
+            Text(
+                model.ingredients.isEmpty
+                    ? "No ingredients added"
+                    : "\(model.ingredients.count) ingredient\(model.ingredients.count == 1 ? "" : "s")"
+            )
+            Spacer()
         }
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: 8))
-    }
-
-    private var ingredientChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack {
-                ForEach(model.ingredients, id: \.self) { ingredient in
-                    IngredientChip(name: ingredient) {
-                        model.removeIngredient(ingredient)
-                    }
-                }
-            }
-        }
+        .foregroundStyle(.secondary)
     }
 
     private var searchButton: some View {
@@ -120,24 +111,6 @@ struct ContentView: View {
     }
 }
 
-private struct IngredientChip: View {
-    let name: String
-    let onRemove: () -> Void
-
-    var body: some View {
-        HStack(spacing: 4) {
-            Text(name)
-            Button(action: onRemove) {
-                Image(systemName: "xmark.circle.fill")
-            }
-            .buttonStyle(.plain)
-        }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 6)
-        .background(.thinMaterial, in: Capsule())
-    }
-}
-
 private struct RecipeRow: View {
     let recipe: RecipeMatch
 
@@ -164,4 +137,5 @@ private struct RecipeRow: View {
 
 #Preview {
     ContentView()
+        .modelContainer(for: PersistedIngredient.self, inMemory: true)
 }

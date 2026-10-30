@@ -5,6 +5,8 @@
 
 import Foundation
 import Observation
+import SwiftData
+import SwiftUI
 
 @MainActor
 @Observable
@@ -18,14 +20,23 @@ final class RecipeSearchModel {
     private(set) var quotaLeft: Double?
 
     private let service: SpoonacularService
+    private let modelContext: ModelContext
     // Keyed by the sorted ingredient list, so re-running an identical search
     // (e.g. after removing then re-adding the same chip) doesn't spend quota twice.
     private var cache: [String: [RecipeMatch]] = [:]
     private var suggestionCache: [String: [IngredientSuggestion]] = [:]
     private var suggestionTask: Task<Void, Never>?
 
-    init(service: SpoonacularService? = nil) {
+    init(context: ModelContext, service: SpoonacularService? = nil) {
+        self.modelContext = context
         self.service = service ?? SpoonacularService()
+        loadPersistedIngredients()
+    }
+
+    private func loadPersistedIngredients() {
+        let descriptor = FetchDescriptor<PersistedIngredient>(sortBy: [SortDescriptor(\.dateAdded)])
+        let rows = (try? modelContext.fetch(descriptor)) ?? []
+        ingredients = rows.map(\.name)
     }
 
     func addIngredient() {
@@ -35,6 +46,9 @@ final class RecipeSearchModel {
         newIngredientText = ""
         suggestions = []
         suggestionTask?.cancel()
+
+        modelContext.insert(PersistedIngredient(name: trimmed))
+        try? modelContext.save()
     }
 
     func selectSuggestion(_ suggestion: IngredientSuggestion) {
@@ -77,6 +91,22 @@ final class RecipeSearchModel {
 
     func removeIngredient(_ ingredient: String) {
         ingredients.removeAll { $0 == ingredient }
+        deletePersistedIngredient(named: ingredient)
+    }
+
+    func removeIngredients(at offsets: IndexSet) {
+        let namesToRemove = offsets.map { ingredients[$0] }
+        ingredients.remove(atOffsets: offsets)
+        namesToRemove.forEach(deletePersistedIngredient)
+    }
+
+    private func deletePersistedIngredient(named name: String) {
+        let descriptor = FetchDescriptor<PersistedIngredient>(
+            predicate: #Predicate { $0.name == name }
+        )
+        guard let rows = try? modelContext.fetch(descriptor) else { return }
+        rows.forEach(modelContext.delete)
+        try? modelContext.save()
     }
 
     func search() async {
