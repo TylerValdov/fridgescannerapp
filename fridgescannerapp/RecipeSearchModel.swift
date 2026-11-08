@@ -1,3 +1,4 @@
+
 //
 //  RecipeSearchModel.swift
 //  fridgescannerapp
@@ -19,7 +20,7 @@ final class RecipeSearchModel {
     private(set) var errorMessage: String?
     private(set) var quotaLeft: Double?
 
-    private let service: SpoonacularService
+    let service: SpoonacularService
     private let modelContext: ModelContext
     // Keyed by the sorted ingredient list, so re-running an identical search
     // (e.g. after removing then re-adding the same chip) doesn't spend quota twice.
