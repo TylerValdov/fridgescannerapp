@@ -53,7 +53,7 @@ struct IngredientEntryView: View {
 
 #Preview {
     let container = try! ModelContainer(
-        for: PersistedIngredient.self,
+        for: PersistedIngredient.self, MealPreferences.self,
         configurations: ModelConfiguration(isStoredInMemoryOnly: true)
     )
     NavigationStack {

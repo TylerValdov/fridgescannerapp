@@ -10,6 +10,8 @@ import SwiftUI
 
 struct HomeView: View {
     let history: RecipeHistoryStore
+    // Switches to the Recipes tab.
+    var onFindRecipes: () -> Void = {}
 
     var body: some View {
         NavigationStack {
@@ -33,9 +35,7 @@ struct HomeView: View {
 
                     // Find recipes button
                     
-                    NavigationLink {
-                        IngredientSearchView()
-                    } label: {
+                    Button(action: onFindRecipes) {
                         HStack(spacing: 16) {
                             Image(systemName: "fork.knife")
                                 .font(.title2)
@@ -44,7 +44,7 @@ struct HomeView: View {
                                 Text("Find Recipes")
                                     .font(.headline)
 
-                                Text("Enter ingredients from your fridge")
+                                Text("See what you can make from your fridge")
                                     .font(.subheadline)
                                     .foregroundStyle(.secondary)
                             }
@@ -64,27 +64,21 @@ struct HomeView: View {
                     .buttonStyle(.plain)
 
 
-                    // Liked recipes
+                    // Favorite recipes
                     VStack(alignment: .leading, spacing: 14) {
-                        Label("Liked Recipes", systemImage: "heart.fill")
+                        Label("Favorites", systemImage: "heart.fill")
                             .font(.title2.bold())
                             .foregroundStyle(.primary)
 
                         if history.likedRecipes.isEmpty {
                             emptySection(
-                                message: "No liked recipes yet",
+                                message: "No favorites yet",
                                 subtitle: "Tap the heart on recipes you love!",
                                 icon: "heart"
                             )
                         } else {
                             ForEach(history.likedRecipes) { recipe in
-                                HomeRecipeCard(
-                                    recipe: recipe,
-                                    isLiked: history.isLiked(recipe),
-                                    onLike: {
-                                        history.toggleLike(recipe)
-                                    }
-                                )
+                                recipeLink(for: recipe)
                             }
                         }
                     }
@@ -102,13 +96,7 @@ struct HomeView: View {
                             )
                         } else {
                             ForEach(history.recentRecipes) { recipe in
-                                HomeRecipeCard(
-                                    recipe: recipe,
-                                    isLiked: history.isLiked(recipe),
-                                    onLike: {
-                                        history.toggleLike(recipe)
-                                    }
-                                )
+                                recipeLink(for: recipe)
                             }
                         }
                     }
@@ -118,6 +106,21 @@ struct HomeView: View {
             .navigationTitle("Home")
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    private func recipeLink(for recipe: RecipeMatch) -> some View {
+        NavigationLink {
+            RecipeDetailView(recipe: recipe)
+        } label: {
+            HomeRecipeCard(
+                recipe: recipe,
+                isLiked: history.isLiked(recipe),
+                onLike: {
+                    history.toggleLike(recipe)
+                }
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private func emptySection(
@@ -155,7 +158,7 @@ private struct HomeRecipeCard: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            AsyncImage(url: URL(string: recipe.image)) { image in
+            AsyncImage(url: recipe.image.flatMap { URL(string: $0) }) { image in
                 image
                     .resizable()
                     .scaledToFill()
@@ -170,11 +173,8 @@ private struct HomeRecipeCard: View {
                     .font(.headline)
                     .lineLimit(2)
 
-                Text("Uses \(recipe.usedIngredientCount) ingredients")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-
-                Text("Missing \(recipe.missedIngredientCount)")
+                // Counts are from when the recipe was saved, not the current fridge.
+                Text("When saved: uses \(recipe.usedIngredientCount), missing \(recipe.missedIngredientCount)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

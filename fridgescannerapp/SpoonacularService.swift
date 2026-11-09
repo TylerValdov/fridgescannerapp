@@ -41,17 +41,37 @@ struct SpoonacularService {
         self.session = session
     }
 
-    // Spoonacular's free tier is capped at 50 points/day; this call costs
-    // roughly 1 point plus ~0.01 per result, so keeping `number` small matters.
-    func findRecipes(byIngredients ingredients: [String], number: Int = 5) async throws -> SpoonacularResult {
-        var components = URLComponents(string: "https://api.spoonacular.com/recipes/findByIngredients")
-        components?.queryItems = [
-            URLQueryItem(name: "ingredients", value: ingredients.joined(separator: ",")),
-            URLQueryItem(name: "number", value: String(number)),
-            URLQueryItem(name: "ranking", value: "2"),
+    // Spoonacular's free tier is capped at 50 points/day. complexSearch is used rather than
+    // findByIngredients because only it can filter by diet, intolerances and excluded
+    // ingredients. With fillIngredients it costs ~1 point plus ~0.035 per result.
+    func searchRecipes(
+        including ingredients: [String],
+        excluding excluded: [String] = [],
+        diet: String? = nil,
+        intolerances: [String] = [],
+        number: Int = 20
+    ) async throws -> SpoonacularResult {
+        var components = URLComponents(string: "https://api.spoonacular.com/recipes/complexSearch")
+        var queryItems = [
+            // Ranks by how many of these a recipe uses; it doesn't require all of them.
+            URLQueryItem(name: "includeIngredients", value: ingredients.joined(separator: ",")),
+            URLQueryItem(name: "sort", value: "min-missing-ingredients"),
+            // Adds used/missed ingredient lists and counts, matching RecipeMatch.
+            URLQueryItem(name: "fillIngredients", value: "true"),
             URLQueryItem(name: "ignorePantry", value: "true"),
+            URLQueryItem(name: "number", value: String(number)),
             URLQueryItem(name: "apiKey", value: apiKey)
         ]
+        if !excluded.isEmpty {
+            queryItems.append(URLQueryItem(name: "excludeIngredients", value: excluded.joined(separator: ",")))
+        }
+        if let diet {
+            queryItems.append(URLQueryItem(name: "diet", value: diet))
+        }
+        if !intolerances.isEmpty {
+            queryItems.append(URLQueryItem(name: "intolerances", value: intolerances.joined(separator: ",")))
+        }
+        components?.queryItems = queryItems
         guard let url = components?.url else { throw SpoonacularError.invalidURL }
 
         let (data, response) = try await session.data(from: url)
@@ -66,13 +86,13 @@ struct SpoonacularService {
             throw SpoonacularError.requestFailed(statusCode: httpResponse.statusCode)
         }
 
-        let recipes = try JSONDecoder().decode([RecipeMatch].self, from: data)
+        let page = try JSONDecoder().decode(RecipeSearchPage.self, from: data)
         let quota = quota(from: httpResponse)
-        return SpoonacularResult(recipes: recipes, quota: quota)
+        return SpoonacularResult(recipes: page.results, quota: quota)
     }
 
     // Resolves partial/misspelled/ambiguous text (e.g. "chik" -> "chicken") against
-    // Spoonacular's real ingredient list, before it's ever sent to findByIngredients.
+    // Spoonacular's real ingredient list, before it's ever sent to complexSearch.
     func autocompleteIngredients(matching query: String, number: Int = 5) async throws -> [IngredientSuggestion] {
         var components = URLComponents(string: "https://api.spoonacular.com/food/ingredients/autocomplete")
         components?.queryItems = [

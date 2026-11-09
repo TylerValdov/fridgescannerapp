@@ -4,6 +4,8 @@ import SwiftUI
 struct RecipeDetailView: View {
     let recipe: RecipeMatch
 
+    @Environment(RecipeHistoryStore.self) private var history
+    @State private var markedCooked = false
     @State private var details: RecipeDetails?
     @State private var isLoading = true
     @State private var errorMessage: String?
@@ -37,6 +39,19 @@ struct RecipeDetailView: View {
                     }
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+
+                    // Adds the recipe to "Recently Used" on the Home tab.
+                    Button {
+                        history.addToRecent(recipe)
+                        markedCooked = true
+                    } label: {
+                        Label(
+                            markedCooked ? "Added to Recently Used" : "Mark as Cooked",
+                            systemImage: markedCooked ? "checkmark" : "frying.pan"
+                        )
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(markedCooked)
                 }
 
                 if isLoading {
@@ -109,6 +124,16 @@ struct RecipeDetailView: View {
         }
         .navigationTitle("Recipe Details")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    history.toggleLike(recipe)
+                } label: {
+                    Image(systemName: history.isLiked(recipe) ? "heart.fill" : "heart")
+                }
+                .accessibilityLabel(history.isLiked(recipe) ? "Remove from Favorites" : "Add to Favorites")
+            }
+        }
         .task {
             await loadDetails()
         }
@@ -116,9 +141,9 @@ struct RecipeDetailView: View {
 
     private var recipeImage: some View {
         AsyncImage(
-            url: URL(
-                string: details?.image ?? recipe.image
-            )
+            url: (details?.image ?? recipe.image).flatMap {
+                URL(string: $0)
+            }
         ) { image in
             image
                 .resizable()

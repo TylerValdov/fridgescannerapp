@@ -8,134 +8,62 @@
 import SwiftUI
 import SwiftData
 
+enum AppTab: Hashable {
+    case home, fridge, recipes, preferences
+}
+
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
     @State private var model: RecipeSearchModel?
+    // One shared store, so a favorite added on any screen shows up everywhere.
+    @State private var history = RecipeHistoryStore()
+    @State private var selectedTab: AppTab = .home
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if let model {
-                    FridgeScannerContent(model: model)
-                } else {
-                    ProgressView()
-                        .task {
-                            if model == nil {
-                                model = RecipeSearchModel(context: modelContext)
-                            }
-                        }
-                }
-            }
-            .navigationTitle("Fridge Scanner")
-        }
-    }
-}
-
-private struct FridgeScannerContent: View {
-    let model: RecipeSearchModel
-
-    var body: some View {
-        VStack(spacing: 12) {
-            ingredientsSummaryRow
-            searchButton
-            if let quotaLeft = model.quotaLeft {
-                Text("Spoonacular points left today: \(Int(quotaLeft))")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            resultsSection
-        }
-        .padding()
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                NavigationLink("Manage Ingredients") {
-                    IngredientEntryView(model: model)
-                }
-            }
-        }
-    }
-
-    private var ingredientsSummaryRow: some View {
-        HStack {
-            Image(systemName: "carrot")
-            Text(
-                model.ingredients.isEmpty
-                    ? "No ingredients added"
-                    : "\(model.ingredients.count) ingredient\(model.ingredients.count == 1 ? "" : "s")"
-            )
-            Spacer()
-        }
-        .foregroundStyle(.secondary)
-    }
-
-    private var searchButton: some View {
-        Button {
-            Task { await model.search() }
-        } label: {
-            if model.isLoading {
-                ProgressView()
+        Group {
+            if let model {
+                tabs(for: model)
             } else {
-                Text("Find Recipes")
+                ProgressView()
+                    .task {
+                        if model == nil {
+                            model = RecipeSearchModel(context: modelContext)
+                        }
+                    }
             }
         }
-        .buttonStyle(.borderedProminent)
-        .disabled(model.ingredients.isEmpty || model.isLoading || (model.quotaLeft ?? 1) <= 0)
+        .environment(history)
     }
 
-    @ViewBuilder
-    private var resultsSection: some View {
-        if let errorMessage = model.errorMessage {
-            Text(errorMessage)
-                .foregroundStyle(.red)
-                .font(.footnote)
-        }
+    private func tabs(for model: RecipeSearchModel) -> some View {
+        TabView(selection: $selectedTab) {
+            // HomeView has its own NavigationStack.
+            HomeView(history: history, onFindRecipes: { selectedTab = .recipes })
+                .tabItem { Label("Home", systemImage: "house") }
+                .tag(AppTab.home)
 
-        if model.results.isEmpty && !model.isLoading {
-            ContentUnavailableView(
-                "No Recipes Yet",
-                systemImage: "fork.knife",
-                description: Text(
-                    "Add ingredients and tap Find Recipes to get started."
-                )
-            )
-        } else {
-            List(model.results) { recipe in
-                NavigationLink {
-                    RecipeDetailView(recipe: recipe)
-                } label: {
-                    RecipeRow(recipe: recipe)
-                }
+            NavigationStack {
+                IngredientEntryView(model: model)
             }
-            .listStyle(.plain)
-        }
-    }
-}
+            .tabItem { Label("Fridge", systemImage: "refrigerator") }
+            .tag(AppTab.fridge)
 
-private struct RecipeRow: View {
-    let recipe: RecipeMatch
-
-    var body: some View {
-        HStack {
-            AsyncImage(url: URL(string: recipe.image)) { image in
-                image.resizable().aspectRatio(contentMode: .fill)
-            } placeholder: {
-                Color.secondary.opacity(0.2)
+            NavigationStack {
+                RecipesView(model: model, onEditPreferences: { selectedTab = .preferences })
             }
-            .frame(width: 56, height: 56)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .tabItem { Label("Recipes", systemImage: "fork.knife") }
+            .tag(AppTab.recipes)
 
-            VStack(alignment: .leading) {
-                Text(recipe.title)
-                    .font(.headline)
-                Text("Uses \(recipe.usedIngredientCount) • Missing \(recipe.missedIngredientCount)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            NavigationStack {
+                PreferencesView(model: model)
             }
+            .tabItem { Label("Preferences", systemImage: "slider.horizontal.3") }
+            .tag(AppTab.preferences)
         }
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: PersistedIngredient.self, inMemory: true)
+        .modelContainer(for: [PersistedIngredient.self, MealPreferences.self], inMemory: true)
 }

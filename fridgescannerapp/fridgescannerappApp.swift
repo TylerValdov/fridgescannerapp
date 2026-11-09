@@ -14,6 +14,6 @@ struct fridgescannerappApp: App {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(for: PersistedIngredient.self)
+        .modelContainer(for: [PersistedIngredient.self, MealPreferences.self])
     }
 }
