@@ -2,10 +2,13 @@
 //  RecipeModels.swift
 //  fridgescannerapp
 //
+//  Plain data types decoded from Spoonacular responses (and from the
+//  bundled demo data), shared by every screen that shows a recipe.
+//
 
 import Foundation
 
-// Codable (not just Decodable) so RecipeHistoryStore can save favorites and recents.
+// Codable (not just Decodable) so recipes can be encoded as well as decoded.
 struct IngredientRef: Codable, Hashable {
     let id: Int
     let name: String

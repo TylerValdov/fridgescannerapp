@@ -1,16 +1,27 @@
+//
+//  RecipeDetailView.swift
+//  fridgescannerapp
+//
+//  One recipe's photo, summary, ingredients and instructions, with buttons
+//  to favorite it and mark it as cooked. Loads details through
+//  RecipeSearchModel, so it works with live or demo data.
+//
 
 import SwiftUI
 
 struct RecipeDetailView: View {
+    private static let readableWidth: CGFloat = 700
+
     let recipe: RecipeMatch
 
-    @Environment(RecipeHistoryStore.self) private var history
+    @Environment(SavedRecipeStore.self) private var history
+    @Environment(RecipeSearchModel.self) private var model
     @State private var markedCooked = false
     @State private var details: RecipeDetails?
     @State private var isLoading = true
     @State private var errorMessage: String?
-
-    private let service = SpoonacularService()
+    /// A short confirmation after favoriting ("dialogs yield closure").
+    @State private var confirmation: String?
 
     var body: some View {
         ScrollView {
@@ -52,6 +63,13 @@ struct RecipeDetailView: View {
                     }
                     .buttonStyle(.bordered)
                     .disabled(markedCooked)
+
+                    let timesCooked = history.timesCooked(recipe)
+                    if timesCooked > 0 {
+                        Text("You've cooked this \(timesCooked == 1 ? "once" : "\(timesCooked) times").")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
                 }
 
                 if isLoading {
@@ -74,7 +92,7 @@ struct RecipeDetailView: View {
                        !summary.isEmpty {
                         sectionTitle("About This Recipe")
 
-                        Text(cleanHTML(summary))
+                        Text(stripHTML(summary))
                             .font(.body)
                     }
 
@@ -99,8 +117,8 @@ struct RecipeDetailView: View {
                     sectionTitle("Cooking Instructions")
 
                     if let instructions = details.instructions,
-                       !cleanHTML(instructions).isEmpty {
-                        Text(cleanHTML(instructions))
+                       !stripHTML(instructions).isEmpty {
+                        Text(stripHTML(instructions))
                             .font(.body)
                             .lineSpacing(5)
                     } else {
@@ -121,6 +139,23 @@ struct RecipeDetailView: View {
                 }
             }
             .padding()
+            // On iPad, keep lines a readable length instead of stretching across the screen.
+            .frame(maxWidth: RecipeDetailView.readableWidth)
+            .frame(maxWidth: .infinity)
+        }
+        .overlay(alignment: .bottom) {
+            if let confirmation {
+                Label(confirmation, systemImage: "heart.fill")
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(.regularMaterial, in: Capsule())
+                    .padding(.bottom, 12)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .task {
+                        try? await Task.sleep(for: .seconds(2))
+                        withAnimation { self.confirmation = nil }
+                    }
+            }
         }
         .navigationTitle("Recipe Details")
         .navigationBarTitleDisplayMode(.inline)
@@ -128,6 +163,9 @@ struct RecipeDetailView: View {
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     history.toggleLike(recipe)
+                    withAnimation {
+                        confirmation = history.isLiked(recipe) ? "Saved to Favorites" : nil
+                    }
                 } label: {
                     Image(systemName: history.isLiked(recipe) ? "heart.fill" : "heart")
                 }
@@ -175,37 +213,9 @@ struct RecipeDetailView: View {
         }
 
         do {
-            details = try await service.getRecipeDetails(
-                id: recipe.id
-            )
+            details = try await model.recipeDetails(id: recipe.id)
         } catch {
             errorMessage = error.localizedDescription
         }
-    }
-
-    private func cleanHTML(_ html: String) -> String {
-        guard let data = html.data(using: .utf8) else {
-            return html
-        }
-
-        guard let attributed = try? NSAttributedString(
-            data: data,
-            options: [
-                .documentType: NSAttributedString.DocumentType.html,
-                .characterEncoding: String.Encoding.utf8.rawValue
-            ],
-            documentAttributes: nil
-        ) else {
-            return html
-                .replacingOccurrences(
-                    of: "<[^>]+>",
-                    with: " ",
-                    options: .regularExpression
-                )
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-        }
-
-        return attributed.string
-            .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }

@@ -4,14 +4,21 @@
 //
 //  Created by lending on 10/25/26.
 //
-
+//  The first screen after signing in: a greeting, a shortcut to the
+//  Recipes tab, and the user's favorites and recently cooked recipes.
+//
 
 import SwiftUI
 
 struct HomeView: View {
-    let history: RecipeHistoryStore
+    @Environment(SavedRecipeStore.self) private var history
+    @Environment(RecipeSearchModel.self) private var model
     // Switches to the Recipes tab.
     var onFindRecipes: () -> Void = {}
+
+    private var firstName: String {
+        model.account.user.displayName.components(separatedBy: " ").first ?? model.account.user.displayName
+    }
 
     var body: some View {
         NavigationStack {
@@ -25,11 +32,14 @@ struct HomeView: View {
                                 .foregroundStyle(.primary)
                                 .font(.largeTitle)
 
-                            Text("Fridge Scanner")
+                            Text("Hi, \(firstName)")
                                 .font(.largeTitle.bold())
                         }
 
-                        Text("Turn your ingredients into something delicious!")
+                        Text(model.household.name)
+                            .font(.headline)
+                        // Polymorphism: admins and members get different text from their Account subclass
+                        Text(model.account.homeGreeting)
                             .foregroundStyle(.secondary)
                     }
 

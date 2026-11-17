@@ -2,6 +2,10 @@
 //  MealPreferences.swift
 //  fridgescannerapp
 //
+//  A household's shared diet rules: diet, intolerances, must-include and
+//  excluded ingredients, and how many missing ingredients are acceptable.
+//  Only the household admin can change them.
+//
 
 import Foundation
 import SwiftData
@@ -73,7 +77,7 @@ enum Intolerance: String, CaseIterable, Identifiable {
     var displayName: String { rawValue.capitalized }
 }
 
-// Single row holding the user's meal preferences. RecipeSearchModel creates it on first launch.
+// OOP: a SwiftData model class, one per household.
 @Model
 final class MealPreferences {
     var dietRaw: String = ""
@@ -81,6 +85,7 @@ final class MealPreferences {
     var mustInclude: [String] = []
     var excluded: [String] = []
     var maxMissing: Int = 3
+    var household: Household?
 
     init() {}
 }
@@ -92,6 +97,7 @@ extension MealPreferences {
     }
 
     var intolerances: Set<Intolerance> {
+        // Functional: compactMap turns stored strings back into enum values
         get { Set(intolerancesRaw.compactMap(Intolerance.init(rawValue:))) }
         // Sorted so the same selection always produces the same cache key.
         set { intolerancesRaw = newValue.map(\.rawValue).sorted() }
@@ -110,6 +116,7 @@ extension MealPreferences {
 
     // e.g. "Vegan · No dairy · Excluding mushrooms", or nil when nothing is set.
     var summary: String? {
+        // Procedural: builds the summary step by step
         var parts: [String] = []
         if diet != .noPreference {
             parts.append(diet.displayName)
@@ -124,5 +131,13 @@ extension MealPreferences {
             parts.append("Excluding " + excluded.joined(separator: ", "))
         }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
+    func reset() {
+        dietRaw = ""
+        intolerancesRaw = []
+        mustInclude = []
+        excluded = []
+        maxMissing = 3
     }
 }
