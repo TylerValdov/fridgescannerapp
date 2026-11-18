@@ -2,8 +2,9 @@
 //  AppSecrets.swift
 //  fridgescannerapp
 //
-//  Reads the Spoonacular API key from Secrets.plist, which is gitignored.
-//  Without it, the app still builds and runs, using the bundled demo data.
+//  Reads the Spoonacular API key from Secrets.swift, which is gitignored.
+//  Copy Secrets.swift.example to Secrets.swift before building. While the
+//  key is still the placeholder, the app uses the bundled demo data.
 //
 
 import Foundation
@@ -17,15 +18,10 @@ enum AppResources {
 enum AppSecrets {
     private static let placeholder = "YOUR_SPOONACULAR_API_KEY"
 
-    /// nil when Secrets.plist is missing or still has the placeholder.
+    /// nil when Secrets.swift still has the placeholder.
     static var spoonacularAPIKey: String? {
-        guard
-            let url = AppResources.bundle.url(forResource: "Secrets", withExtension: "plist"),
-            let values = NSDictionary(contentsOf: url) as? [String: Any],
-            let key = values["SpoonacularAPIKey"] as? String,
-            !key.isEmpty,
-            key != placeholder
-        else { return nil }
+        let key = Secrets.spoonacularAPIKey
+        guard !key.isEmpty, key != placeholder else { return nil }
         return key
     }
 }

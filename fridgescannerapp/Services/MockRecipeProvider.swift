@@ -5,7 +5,7 @@
 //  Demo recipe data that works with no network or API key. Searches 24
 //  real Spoonacular recipes saved in MockData/MockRecipes.json, matching them
 //  against the fridge on the device. Used when there's no key in
-//  Secrets.plist, or after the daily quota runs out.
+//  Secrets.swift, or after the daily quota runs out.
 //
 
 import Foundation

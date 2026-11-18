@@ -65,4 +65,3 @@ fastlane/test_output
 
 # API keys - never commit real secrets
 Secrets.swift
-Secrets.plist

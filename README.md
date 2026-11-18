@@ -6,11 +6,11 @@ Runs on **iPhone** (tab bar) and **iPad** (sidebar, with the recipe list and the
 
 ## Setup
 
-1. Open `fridgescannerapp.xcodeproj` in Xcode 16 or later.
-2. Pick an iPhone or iPad simulator running iOS 17 or later, then press Run. No Team or Bundle Identifier changes are needed for the simulator.
-3. Optional, for live recipe data: copy `fridgescannerapp/Secrets.plist.example` to `fridgescannerapp/Secrets.plist` and paste your key from the [Spoonacular console](https://spoonacular.com/food-api/console). `Secrets.plist` is gitignored.
+1. Copy `fridgescannerapp/Secrets.swift.example` to `fridgescannerapp/Secrets.swift` and paste your key from the [Spoonacular console](https://spoonacular.com/food-api/console). `Secrets.swift` is gitignored, and the project doesn't compile without it.
+2. Open `fridgescannerapp.xcodeproj` in Xcode 16 or later.
+3. Pick an iPhone or iPad simulator running iOS 17 or later, then press Run. No Team or Bundle Identifier changes are needed for the simulator.
 
-Without a key, or once the free tier's 50 daily points are used up, the app switches to **demo data**: 24 real Spoonacular recipes bundled in `MockData/MockRecipes.json`, matched against the fridge on the device. The Recipes screen says when demo data is showing.
+While the key is still the placeholder, or once the free tier's 50 daily points are used up, the app switches to **demo data**: 24 real Spoonacular recipes bundled in `MockData/MockRecipes.json`, matched against the fridge on the device. The Recipes screen says when demo data is showing.
 
 > Upgrading from an earlier build? Delete the app from the simulator or device first. The data model changed, and the old ingredient list can't be migrated.
 
@@ -47,7 +47,7 @@ fridgescannerapp/
 ├── Models/                     SwiftData models, Account roles, app state, sample data
 ├── Services/                   RecipeProvider and its Spoonacular and demo-data subclasses
 ├── Auth/                       AuthModel (sign-in, sign-up, Face ID) and password hashing
-├── Utilities/                  Formatting, validation, Secrets.plist loading
+├── Utilities/                  Formatting, validation, API key loading
 ├── Views/                      Screens; Views/Auth for sign-in, Views/Components for shared pieces
 └── MockData/                   Bundled demo recipes
 ```

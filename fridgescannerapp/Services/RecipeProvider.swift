@@ -51,7 +51,7 @@ class RecipeProvider {
     /// True for the bundled sample data, so the app can label it.
     var isDemoData: Bool { false }
 
-    /// Spoonacular when a key is set up in Secrets.plist, otherwise demo data.
+    /// Spoonacular when a key is set up in Secrets.swift, otherwise demo data.
     static func makeDefault() -> RecipeProvider {
         if let key = AppSecrets.spoonacularAPIKey {
             return SpoonacularProvider(apiKey: key)
