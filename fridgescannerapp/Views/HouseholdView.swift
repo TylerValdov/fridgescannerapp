@@ -21,6 +21,7 @@ struct HouseholdView: View {
     @Environment(RecipeSearchModel.self) private var model
     @State private var householdName = ""
     @State private var pendingConfirmation: Confirmation?
+    @State private var isShowingConfirmation = false
     @State private var copiedInviteCode = false
 
     private var account: Account { model.account }
@@ -51,7 +52,9 @@ struct HouseholdView: View {
         // button inside a list row can close without running its action.
         .confirmationDialog(
             confirmationTitle,
-            isPresented: Binding(get: { pendingConfirmation != nil }, set: { if !$0 { pendingConfirmation = nil } }),
+            // A separate flag, as in Apple's example: the pending action stays set
+            // while the dialog closes, so its button always has something to run.
+            isPresented: $isShowingConfirmation,
             titleVisibility: .visible,
             presenting: pendingConfirmation
         ) { confirmation in
@@ -127,6 +130,7 @@ struct HouseholdView: View {
                         if auth.canRemove(member) {
                             Button("Remove", role: .destructive) {
                                 pendingConfirmation = .removeMember(member)
+                                isShowingConfirmation = true
                             }
                         }
                     }
@@ -153,6 +157,7 @@ struct HouseholdView: View {
             }
             Button("Sign Out", role: .destructive) {
                 pendingConfirmation = .signOut
+                isShowingConfirmation = true
             }
         }
     }

@@ -10,6 +10,7 @@
 import Foundation
 import LocalAuthentication
 import Observation
+import OSLog
 import SwiftData
 
 enum AuthError: LocalizedError {
@@ -46,6 +47,8 @@ final class AuthModel {
     private static let maxFailedAttempts = 5
     private static let lockoutDuration: TimeInterval = 30
     private static let biometricUsernameKey = "biometricUsername"
+    /// Sign-in events, shown in Xcode's console (filter by "auth").
+    private static let log = Logger(subsystem: "fridgescannerapp", category: "auth")
 
     private(set) var account: Account?
     private(set) var isWorking = false
@@ -84,9 +87,11 @@ final class AuthModel {
         failedAttempts = 0
         lockoutEndsAt = nil
         account = Account.make(for: user)
+        AuthModel.log.info("Signed in as \(user.username, privacy: .public)")
     }
 
     func signOut() {
+        AuthModel.log.info("Signing out \(self.account?.user.username ?? "nobody", privacy: .public)")
         account = nil
     }
 
