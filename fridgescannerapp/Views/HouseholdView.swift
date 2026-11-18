@@ -11,15 +11,28 @@ import SwiftData
 import UIKit
 
 struct HouseholdView: View {
+    /// The action waiting for the user to confirm.
+    private enum Confirmation {
+        case removeMember(User)
+        case signOut
+    }
+
     @Environment(AuthModel.self) private var auth
     @Environment(RecipeSearchModel.self) private var model
     @State private var householdName = ""
-    @State private var memberToRemove: User?
-    @State private var isConfirmingSignOut = false
+    @State private var pendingConfirmation: Confirmation?
     @State private var copiedInviteCode = false
 
     private var account: Account { model.account }
     private var household: Household { model.household }
+
+    private var confirmationTitle: String {
+        switch pendingConfirmation {
+        case .removeMember(let member): "Remove \(member.displayName)?"
+        case .signOut: "Sign out?"
+        case nil: ""
+        }
+    }
 
     var body: some View {
         List {
@@ -32,18 +45,33 @@ struct HouseholdView: View {
         }
         .navigationTitle("Household")
         .onAppear { householdName = household.name }
-        // Error prevention: removing someone can't be undone, so confirm first.
+        // Error prevention: removing someone and signing out both ask first.
+        // One dialog for the whole screen, attached to the List: SwiftUI doesn't
+        // reliably show two dialogs on one view, and a dialog attached to a
+        // button inside a list row can close without running its action.
         .confirmationDialog(
-            "Remove \(memberToRemove?.displayName ?? "this member")?",
-            isPresented: Binding(get: { memberToRemove != nil }, set: { if !$0 { memberToRemove = nil } }),
+            confirmationTitle,
+            isPresented: Binding(get: { pendingConfirmation != nil }, set: { if !$0 { pendingConfirmation = nil } }),
             titleVisibility: .visible,
-            presenting: memberToRemove
-        ) { member in
-            Button("Remove", role: .destructive) {
-                auth.remove(member)
+            presenting: pendingConfirmation
+        ) { confirmation in
+            switch confirmation {
+            case .removeMember(let member):
+                Button("Remove", role: .destructive) {
+                    auth.remove(member)
+                }
+            case .signOut:
+                Button("Sign Out", role: .destructive) {
+                    auth.signOut()
+                }
             }
-        } message: { _ in
-            Text("They'll lose access to this fridge, and their favorites will be deleted. They can rejoin with the invite code.")
+        } message: { confirmation in
+            switch confirmation {
+            case .removeMember:
+                Text("They'll lose access to this fridge, and their favorites will be deleted. They can rejoin with the invite code.")
+            case .signOut:
+                Text("You'll need your password or Face ID to sign back in.")
+            }
         }
     }
 
@@ -98,7 +126,7 @@ struct HouseholdView: View {
                     .swipeActions {
                         if auth.canRemove(member) {
                             Button("Remove", role: .destructive) {
-                                memberToRemove = member
+                                pendingConfirmation = .removeMember(member)
                             }
                         }
                     }
@@ -124,14 +152,7 @@ struct HouseholdView: View {
                 )
             }
             Button("Sign Out", role: .destructive) {
-                isConfirmingSignOut = true
-            }
-            // Attached to the button, not the List: SwiftUI won't reliably show two
-            // confirmation dialogs attached to the same view (the member one is on the List).
-            .confirmationDialog("Sign out?", isPresented: $isConfirmingSignOut, titleVisibility: .visible) {
-                Button("Sign Out", role: .destructive) {
-                    auth.signOut()
-                }
+                pendingConfirmation = .signOut
             }
         }
     }
