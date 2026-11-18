@@ -45,11 +45,6 @@ struct HouseholdView: View {
         } message: { _ in
             Text("They'll lose access to this fridge, and their favorites will be deleted. They can rejoin with the invite code.")
         }
-        .confirmationDialog("Sign out?", isPresented: $isConfirmingSignOut, titleVisibility: .visible) {
-            Button("Sign Out", role: .destructive) {
-                auth.signOut()
-            }
-        }
     }
 
     // MARK: - Sections
@@ -130,6 +125,13 @@ struct HouseholdView: View {
             }
             Button("Sign Out", role: .destructive) {
                 isConfirmingSignOut = true
+            }
+            // Attached to the button, not the List: SwiftUI won't reliably show two
+            // confirmation dialogs attached to the same view (the member one is on the List).
+            .confirmationDialog("Sign out?", isPresented: $isConfirmingSignOut, titleVisibility: .visible) {
+                Button("Sign Out", role: .destructive) {
+                    auth.signOut()
+                }
             }
         }
     }
