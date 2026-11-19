@@ -3,16 +3,13 @@
 //  fridgescannerapp
 //
 //  The household's diet rules, used by every member's recipe search. The
-//  admin can change them; members see them read-only. Saved as soon as
-//  anything changes.
+//  admin can change them; members see them read-only.
 //
 
 import SwiftUI
-import SwiftData
 
 struct PreferencesView: View {
     @Environment(RecipeSearchModel.self) private var model
-    @State private var isConfirmingReset = false
 
     private var canEdit: Bool {
         // Polymorphism: AdminAccount and MemberAccount answer differently
@@ -24,32 +21,20 @@ struct PreferencesView: View {
 
         Form {
             if !canEdit {
-                Section {
-                    Label(
-                        "Only \(model.household.admin?.displayName ?? "your household's admin") can change these. They apply to everyone in \(model.household.name).",
-                        systemImage: "lock"
-                    )
-                    .font(.subheadline)
+                Label("Only \(model.household.admin?.displayName ?? "the admin") can change these.", systemImage: "lock")
                     .foregroundStyle(.secondary)
-                }
             }
 
             Group {
-                Section {
-                    Picker("Diet", selection: $preferences.diet) {
-                        ForEach(Diet.allCases) { diet in
-                            Text(diet.displayName).tag(diet)
-                        }
+                Picker("Diet", selection: $preferences.diet) {
+                    ForEach(Diet.allCases) { diet in
+                        Text(diet.displayName).tag(diet)
                     }
-                } header: {
-                    Text("Diet")
-                } footer: {
-                    Text(preferences.diet.explanation)
                 }
 
                 Section {
                     ForEach(Intolerance.allCases) { intolerance in
-                        Toggle(intolerance.displayName, isOn: binding(for: intolerance, in: preferences))
+                        Toggle(intolerance.rawValue.capitalized, isOn: binding(for: intolerance))
                     }
                 } header: {
                     Text("Intolerances")
@@ -57,75 +42,39 @@ struct PreferencesView: View {
                     Text("Recipes containing these are left out.")
                 }
 
-                Section {
-                    IngredientListEditor(ingredients: $preferences.mustInclude, placeholder: "e.g. Chicken", canEdit: canEdit)
-                } header: {
-                    Text("Must Include")
-                } footer: {
-                    Text("Only show recipes that use all of these.")
+                Section("Only recipes with") {
+                    IngredientListEditor(ingredients: $preferences.mustInclude, canEdit: canEdit)
                 }
 
-                Section {
-                    IngredientListEditor(ingredients: $preferences.excluded, placeholder: "e.g. Mushrooms", canEdit: canEdit)
-                } header: {
-                    Text("Exclude")
-                } footer: {
-                    Text("Recipes with these are left out, even if they're in the fridge.")
+                Section("Leave out recipes with") {
+                    IngredientListEditor(ingredients: $preferences.excluded, canEdit: canEdit)
                 }
 
-                Section {
-                    Stepper(value: $preferences.maxMissing, in: 1...5) {
-                        Text("Missing up to \(pluralize("ingredient", count: preferences.maxMissing))")
-                    }
-                } header: {
-                    Text("Recipe Matching")
-                } footer: {
-                    Text("Recipes that need more ingredients than this are hidden.")
-                }
+                Stepper("Missing up to \(pluralize("ingredient", count: preferences.maxMissing))",
+                        value: $preferences.maxMissing, in: 1...5)
             }
             .disabled(!canEdit)
-
-            if canEdit {
-                Section {
-                    Button("Reset Preferences", role: .destructive) {
-                        isConfirmingReset = true
-                    }
-                }
-            }
         }
         .navigationTitle("Preferences")
-        .onChange(of: preferences.signature) {
-            model.savePreferences()
-        }
-        // Error prevention: confirm before clearing every rule at once.
-        .confirmationDialog("Reset all preferences?", isPresented: $isConfirmingReset, titleVisibility: .visible) {
-            Button("Reset Preferences", role: .destructive) {
-                model.resetPreferences()
-            }
-        } message: {
-            Text("This clears the diet, intolerances and ingredient lists for everyone in \(model.household.name).")
-        }
+        .onDisappear { model.save() }
     }
 
-    private func binding(for intolerance: Intolerance, in preferences: MealPreferences) -> Binding<Bool> {
-        Binding(
-            get: { preferences.intolerances.contains(intolerance) },
+    private func binding(for intolerance: Intolerance) -> Binding<Bool> {
+        let preferences = model.preferences
+        return Binding(
+            get: { preferences.intolerancesRaw.contains(intolerance.rawValue) },
             set: { isOn in
-                if isOn {
-                    preferences.intolerances.insert(intolerance)
-                } else {
-                    preferences.intolerances.remove(intolerance)
-                }
+                preferences.intolerancesRaw.removeAll { $0 == intolerance.rawValue }
+                if isOn { preferences.intolerancesRaw.append(intolerance.rawValue) }
             }
         )
     }
 }
 
-// Text field with autocomplete that edits a list of ingredient names.
+/// A text field with autocomplete that edits a list of ingredient names.
 private struct IngredientListEditor: View {
     @Environment(RecipeSearchModel.self) private var model
     @Binding var ingredients: [String]
-    let placeholder: String
     let canEdit: Bool
 
     @State private var text = ""
@@ -134,28 +83,21 @@ private struct IngredientListEditor: View {
     var body: some View {
         if canEdit {
             HStack {
-                TextField(placeholder, text: $text)
-                    .textInputAutocapitalization(.words)
+                TextField("Ingredient", text: $text)
                     .autocorrectionDisabled()
-                    .submitLabel(.done)
                     .onSubmit { add(text) }
-
                 Button("Add") { add(text) }
                     .disabled(normalizedIngredientName(text).isEmpty)
             }
-            // Debounced: each keystroke cancels the previous task.
+            // Waits until typing pauses: each keystroke restarts this task.
             .task(id: text) {
                 try? await Task.sleep(for: .milliseconds(300))
                 guard !Task.isCancelled else { return }
-                let results = await model.autocomplete(normalizedIngredientName(text))
-                guard !Task.isCancelled else { return }
-                suggestions = results
+                suggestions = await model.autocomplete(text)
             }
 
             ForEach(suggestions) { suggestion in
-                Button(suggestion.name.capitalized) {
-                    add(suggestion.name)
-                }
+                Button(suggestion.name.capitalized) { add(suggestion.name) }
             }
         }
 
@@ -163,20 +105,16 @@ private struct IngredientListEditor: View {
             Text("None")
                 .foregroundStyle(.secondary)
         }
-
         ForEach(ingredients, id: \.self) { ingredient in
             Text(ingredient.capitalized)
         }
-        .onDelete { offsets in
-            ingredients.remove(atOffsets: offsets)
-        }
+        .onDelete { ingredients.remove(atOffsets: $0) }
         .deleteDisabled(!canEdit)
     }
 
     private func add(_ name: String) {
         let name = normalizedIngredientName(name)
-        guard !name.isEmpty else { return }
-        if !ingredients.contains(name) {
+        if !name.isEmpty && !ingredients.contains(name) {
             ingredients.append(name)
         }
         text = ""
@@ -185,10 +123,8 @@ private struct IngredientListEditor: View {
 }
 
 #Preview {
-    let session = SampleData.makePreviewSession(role: .member)
     NavigationStack {
         PreferencesView()
     }
-    .modelContainer(session.container)
-    .environment(RecipeSearchModel(account: session.account, household: session.account.household!, context: session.container.mainContext))
+    .previewEnvironment(SampleData.makePreviewSession(role: .member))
 }

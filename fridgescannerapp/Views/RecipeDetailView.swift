@@ -3,8 +3,9 @@
 //  fridgescannerapp
 //
 //  One recipe's photo, summary, ingredients and instructions, with buttons
-//  to favorite it and mark it as cooked. Loads details through
-//  RecipeSearchModel, so it works with live or demo data.
+//  to favorite it, add what's missing to the shopping list, and mark it as
+//  cooked (which removes the ingredients it used from the fridge, with Undo).
+//  Loads details through RecipeSearchModel, so it works with live or demo data.
 //
 
 import SwiftUI
@@ -16,12 +17,15 @@ struct RecipeDetailView: View {
 
     @Environment(SavedRecipeStore.self) private var history
     @Environment(RecipeSearchModel.self) private var model
+    @Environment(ShoppingListModel.self) private var shopping
     @State private var markedCooked = false
     @State private var details: RecipeDetails?
     @State private var isLoading = true
     @State private var errorMessage: String?
-    /// A short confirmation after favoriting ("dialogs yield closure").
-    @State private var confirmation: String?
+    /// A short confirmation after favoriting or adding to the list ("dialogs yield closure").
+    @State private var toast: Toast?
+
+    private var title: String { details?.title ?? recipe.title }
 
     var body: some View {
         ScrollView {
@@ -29,7 +33,7 @@ struct RecipeDetailView: View {
                 recipeImage
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(details?.title ?? recipe.title)
+                    Text(title)
                         .font(.largeTitle)
                         .fontWeight(.bold)
 
@@ -51,10 +55,14 @@ struct RecipeDetailView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
 
-                    // Adds the recipe to "Recently Used" on the Home tab.
+                    // Adds the recipe to "Recently Used" on Home and removes the
+                    // fridge items it used. The Undo banner puts them back.
                     Button {
                         history.addToRecent(recipe)
                         markedCooked = true
+                        withAnimation {
+                            model.removeAfterCooking(recipe, details: details)
+                        }
                     } label: {
                         Label(
                             markedCooked ? "Added to Recently Used" : "Mark as Cooked",
@@ -102,13 +110,11 @@ struct RecipeDetailView: View {
                        !ingredients.isEmpty {
                         VStack(alignment: .leading, spacing: 12) {
                             ForEach(ingredients) { ingredient in
-                                Label(
-                                    ingredient.original,
-                                    systemImage: "circle"
-                                )
-                                .font(.body)
+                                Label(ingredient.original, systemImage: "circle")
+                                    .font(.body)
                             }
                         }
+                        missingIngredientsButton
                     } else {
                         Text("Ingredient details are unavailable.")
                             .foregroundStyle(.secondary)
@@ -143,29 +149,15 @@ struct RecipeDetailView: View {
             .frame(maxWidth: RecipeDetailView.readableWidth)
             .frame(maxWidth: .infinity)
         }
-        .overlay(alignment: .bottom) {
-            if let confirmation {
-                Label(confirmation, systemImage: "heart.fill")
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 10)
-                    .background(.regularMaterial, in: Capsule())
-                    .padding(.bottom, 12)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                    .task {
-                        try? await Task.sleep(for: .seconds(2))
-                        withAnimation { self.confirmation = nil }
-                    }
-            }
-        }
+        .confirmationToast($toast)
+        .fridgeUndoBanner()
         .navigationTitle("Recipe Details")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
                     history.toggleLike(recipe)
-                    withAnimation {
-                        confirmation = history.isLiked(recipe) ? "Saved to Favorites" : nil
-                    }
+                    toast = history.isLiked(recipe) ? Toast(message: "Saved to Favorites", systemImage: "heart.fill") : nil
                 } label: {
                     Image(systemName: history.isLiked(recipe) ? "heart.fill" : "heart")
                 }
@@ -195,6 +187,29 @@ struct RecipeDetailView: View {
         .frame(maxWidth: .infinity)
         .frame(height: 240)
         .clipShape(RoundedRectangle(cornerRadius: 16))
+        // Decorative: the title below already says what it shows.
+        .accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var missingIngredientsButton: some View {
+        let missing = model.missingIngredients(for: recipe, details: details)
+        // Functional: filter keeps only what isn't already on the list
+        let notOnList = missing.filter { !shopping.contains($0) }
+
+        if !notOnList.isEmpty {
+            Button {
+                shopping.addAll(notOnList)
+                toast = Toast(message: "Added \(notOnList.count) to your shopping list", systemImage: "cart.badge.plus")
+            } label: {
+                Label("Add \(notOnList.count) Missing to Shopping List", systemImage: "cart.badge.plus")
+            }
+            .buttonStyle(.bordered)
+        } else if !missing.isEmpty {
+            Label("Everything missing is on your shopping list.", systemImage: "cart")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+        }
     }
 
     private func sectionTitle(_ title: String) -> some View {
@@ -218,4 +233,14 @@ struct RecipeDetailView: View {
             errorMessage = error.localizedDescription
         }
     }
+}
+
+#Preview {
+    // Breakfast Tacos, from the demo data.
+    let recipe = RecipeMatch(id: 511748, title: "Breakfast Tacos", image: nil, usedIngredientCount: 0,
+                             missedIngredientCount: 0, missedIngredients: [], usedIngredients: [])
+    NavigationStack {
+        RecipeDetailView(recipe: recipe)
+    }
+    .previewEnvironment(SampleData.makePreviewSession())
 }

@@ -1,13 +1,33 @@
 //
-//  Formatting.swift
+//  Helpers.swift
 //  fridgescannerapp
 //
-//  Small text helpers used across the app: ingredient-name matching,
-//  plurals, expiration text, and turning Spoonacular's HTML into plain text.
+//  Small helpers used across the app: the API key, ingredient-name
+//  matching, plurals, expiration text, and turning Spoonacular's HTML into
+//  plain text.
 //
 
 import Foundation
 import UIKit
+
+// MARK: - API key
+
+/// Where bundled files are loaded from. (A local Linux build swaps this
+/// line for its own resource bundle; Xcode builds always use Bundle.main.)
+enum AppResources {
+    static let bundle = Bundle.main
+}
+
+enum AppSecrets {
+    /// The key from Secrets.swift (gitignored), or nil while it's still the
+    /// placeholder, in which case the app uses the bundled demo recipes.
+    static var spoonacularAPIKey: String? {
+        let key = Secrets.spoonacularAPIKey
+        return key.isEmpty || key == "YOUR_SPOONACULAR_API_KEY" ? nil : key
+    }
+}
+
+// MARK: - Text
 
 // Procedural: plain functions that take input and return output, with no
 // shared state. Any screen can call them.

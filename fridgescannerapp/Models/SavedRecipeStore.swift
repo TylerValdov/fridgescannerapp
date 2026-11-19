@@ -3,8 +3,7 @@
 //  fridgescannerapp
 //
 //  The signed-in user's favorites and cooking history, saved with SwiftData
-//  as SavedRecipe rows. (Replaces the UserDefaults version; the method names
-//  are unchanged so HomeView and the recipe screens work as before.)
+//  as SavedRecipe rows.
 //
 
 import Foundation
@@ -14,8 +13,6 @@ import SwiftData
 @MainActor
 @Observable
 final class SavedRecipeStore {
-    private static let maxRecent = 20
-
     private let user: User
     private let context: ModelContext
 
@@ -38,7 +35,6 @@ final class SavedRecipeStore {
         user.savedRecipes
             .filter { $0.lastCookedAt != nil }
             .sorted { ($0.lastCookedAt ?? .distantPast) > ($1.lastCookedAt ?? .distantPast) }
-            .prefix(SavedRecipeStore.maxRecent)
             .map(\.match)
     }
 
@@ -54,7 +50,10 @@ final class SavedRecipeStore {
         let saved = savedRecipe(for: recipe)
         saved.isFavorite.toggle()
         saved.favoritedAt = saved.isFavorite ? .now : nil
-        removeIfUnused(saved)
+        // Neither a favorite nor cooked, so there's no reason to keep it.
+        if !saved.isFavorite && saved.timesCooked == 0 {
+            user.removeSavedRecipe(saved, in: context)
+        }
         try? context.save()
     }
 
@@ -78,11 +77,5 @@ final class SavedRecipeStore {
         let saved = SavedRecipe(recipe: recipe)
         user.addSavedRecipe(saved, in: context)
         return saved
-    }
-
-    private func removeIfUnused(_ saved: SavedRecipe) {
-        if saved.isUnused {
-            user.removeSavedRecipe(saved, in: context)
-        }
     }
 }

@@ -10,8 +10,6 @@ import SwiftUI
 import SwiftData
 
 struct IngredientEntryView: View {
-    private static let undoDuration: Duration = .seconds(5)
-
     @Environment(RecipeSearchModel.self) private var model
     @State private var tracksExpiration = false
     @State private var expirationDate = Calendar.current.date(byAdding: .day, value: 7, to: .now) ?? .now
@@ -25,7 +23,7 @@ struct IngredientEntryView: View {
 
         Form {
             Section {
-                AdaptiveStack {
+                HStack {
                     TextField("e.g. Tomatoes", text: $model.newIngredientText)
                         .textInputAutocapitalization(.words)
                         .autocorrectionDisabled()
@@ -65,11 +63,10 @@ struct IngredientEntryView: View {
 
             Section("In the Fridge") {
                 if model.items.isEmpty {
-                    EmptyStateView(
-                        title: "The fridge is empty",
+                    ContentUnavailableView(
+                        "The fridge is empty",
                         systemImage: "refrigerator",
-                        message: "Add what you have, and Recipes will show what you can make.",
-                        badgeSystemImage: "plus"
+                        description: Text("Add what you have, and Recipes will show what you can make.")
                     )
                 } else {
                     ForEach(model.items) { item in
@@ -80,19 +77,7 @@ struct IngredientEntryView: View {
             }
         }
         .navigationTitle("Fridge")
-        // Golden rule "permit easy reversal": removing an item can be undone for 5 seconds.
-        .safeAreaInset(edge: .bottom) {
-            if let removed = model.recentlyRemoved {
-                UndoBanner(message: "Removed \(removed.name)") {
-                    withAnimation { model.undoRemoval() }
-                }
-                .task(id: removed.id) {
-                    try? await Task.sleep(for: IngredientEntryView.undoDuration)
-                    withAnimation { model.dismissUndo(for: removed.id) }
-                }
-            }
-        }
-        .animation(.default, value: model.recentlyRemoved?.id)
+        .fridgeUndoBanner()
     }
 }
 
@@ -106,7 +91,7 @@ private struct FridgeItemRow: View {
     private var details: String {
         // Functional: compactMap drops the parts that don't apply, then join them
         [
-            item.addedBy.map { "Added by \($0.displayName.components(separatedBy: " ").first ?? $0.displayName)" },
+            item.addedBy.map { "Added by \($0.firstName)" },
             item.expirationDate.map { expirationText(for: $0) }
         ]
         .compactMap { $0 }
@@ -140,6 +125,5 @@ private struct FridgeItemRow: View {
     NavigationStack {
         IngredientEntryView()
     }
-    .modelContainer(session.container)
-    .environment(RecipeSearchModel(account: session.account, household: session.account.household!, context: session.container.mainContext))
+    .previewEnvironment(session)
 }

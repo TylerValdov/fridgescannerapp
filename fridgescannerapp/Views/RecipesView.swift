@@ -3,210 +3,109 @@
 //  fridgescannerapp
 //
 //  The Recipes tab: what the household can make from its fridge, grouped by
-//  how many ingredients are missing. On iPad, the list and the selected
-//  recipe sit side by side.
+//  how many ingredients are missing. Searches only run from the button or
+//  pull-to-refresh, since each one costs API quota.
 //
 
 import SwiftUI
-import SwiftData
 
-// Searches only run from the button or pull-to-refresh, since each one costs quota.
 struct RecipesView: View {
-    private static let listWidth: CGFloat = 380
-
-    // Switches to the Preferences section.
-    var onEditPreferences: () -> Void = {}
+    /// Switches to the Preferences section (iPad). When nil, Preferences opens as a sheet.
+    var onEditPreferences: (() -> Void)?
 
     @Environment(RecipeSearchModel.self) private var model
     @Environment(SavedRecipeStore.self) private var history
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @State private var selectedRecipe: RecipeMatch?
-
-    private var showsSideBySide: Bool {
-        horizontalSizeClass == .regular
-    }
+    @State private var isShowingPreferences = false
 
     var body: some View {
-        VStack(spacing: 12) {
-            VStack(spacing: 12) {
-                ingredientsSummaryRow
-                preferencesSummaryRow
-                searchButton
+        List {
+            Section {
+                Label(pluralize("ingredient", count: model.ingredients.count) + " in your fridge", systemImage: "carrot")
+                preferencesButton
+                Button {
+                    Task { await model.search() }
+                } label: {
+                    if model.isLoading {
+                        ProgressView()
+                    } else {
+                        Text("Find Recipes")
+                    }
+                }
+                .disabled(!model.canSearch)
                 statusMessages
             }
-            .padding(.horizontal)
-            .padding(.top)
 
-            if showsSideBySide {
-                HStack(spacing: 0) {
-                    resultsSection
-                        .frame(width: RecipesView.listWidth)
-                    Divider()
-                    selectedRecipeDetail
-                        .frame(maxWidth: .infinity)
-                }
-            } else {
-                resultsSection
+            if model.sections.isEmpty && !model.isLoading {
+                ContentUnavailableView(
+                    model.results.isEmpty ? "No recipes yet" : "No matches",
+                    systemImage: "fork.knife",
+                    description: Text(model.results.isEmpty
+                        ? "Add ingredients to the fridge, then tap Find Recipes."
+                        : "None of the recipes found fit your preferences. Try allowing more missing ingredients.")
+                )
             }
-        }
-        .navigationTitle("Recipes")
-    }
 
-    // MARK: - Header rows
-
-    private var ingredientsSummaryRow: some View {
-        HStack {
-            Image(systemName: "carrot")
-            Text(
-                model.ingredients.isEmpty
-                    ? "No ingredients added"
-                    : pluralize("ingredient", count: model.ingredients.count) + " in your fridge"
-            )
-            Spacer()
-        }
-        .foregroundStyle(.secondary)
-    }
-
-    private var preferencesSummaryRow: some View {
-        Button(action: onEditPreferences) {
-            HStack {
-                Image(systemName: "slider.horizontal.3")
-                Text(model.preferences.summary ?? "No meal preferences set")
-                    .multilineTextAlignment(.leading)
-                Spacer()
-                Image(systemName: "chevron.right")
-            }
-            .foregroundStyle(.secondary)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var searchButton: some View {
-        Button {
-            Task { await model.search() }
-        } label: {
-            if model.isLoading {
-                ProgressView()
-            } else {
-                Text("Find Recipes")
-            }
-        }
-        .buttonStyle(.borderedProminent)
-        .disabled(!model.canSearch)
-    }
-
-    @ViewBuilder
-    private var statusMessages: some View {
-        if model.isUsingDemoData {
-            Label("Showing demo recipes. Add a Spoonacular key, or try again tomorrow if the daily limit was reached.", systemImage: "shippingbox")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        } else if let quotaLeft = model.quotaLeft {
-            Text("Spoonacular points left today: \(Int(quotaLeft))")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        if model.resultsAreOutdated {
-            Text("Your fridge or preferences changed. Tap Find Recipes to update.")
-                .font(.caption)
-                .foregroundStyle(.orange)
-        }
-        if let errorMessage = model.errorMessage {
-            Text(errorMessage)
-                .foregroundStyle(.red)
-                .font(.footnote)
-        }
-    }
-
-    // MARK: - Results
-
-    @ViewBuilder
-    private var resultsSection: some View {
-        if model.sections.isEmpty && !model.isLoading {
-            ScrollView {
-                if model.results.isEmpty {
-                    EmptyStateView(
-                        title: "No recipes yet",
-                        systemImage: "fork.knife",
-                        message: "Add ingredients to the fridge, then tap Find Recipes.",
-                        badgeSystemImage: "magnifyingglass"
-                    )
-                } else {
-                    // Results came back, but must-include or max-missing hid all of them.
-                    EmptyStateView(
-                        title: "No matches",
-                        systemImage: "line.3.horizontal.decrease.circle",
-                        message: "None of the \(model.results.count) recipes found fit your preferences. Try allowing more missing ingredients or removing a must-include ingredient."
-                    )
-                }
-            }
-        } else {
-            List {
-                ForEach(model.sections) { section in
-                    Section(section.title) {
-                        ForEach(section.recipes) { recipe in
-                            row(for: recipe)
-                                .swipeActions {
-                                    favoriteButton(for: recipe)
-                                }
+            ForEach(model.sections) { section in
+                Section(section.title) {
+                    ForEach(section.recipes) { recipe in
+                        NavigationLink {
+                            RecipeDetailView(recipe: recipe)
+                        } label: {
+                            RecipeRow(recipe: recipe, isFavorite: history.isLiked(recipe))
+                        }
+                        .swipeActions {
+                            Button(history.isLiked(recipe) ? "Unfavorite" : "Favorite", systemImage: "heart") {
+                                history.toggleLike(recipe)
+                            }
+                            .tint(.pink)
                         }
                     }
                 }
             }
-            .listStyle(.plain)
-            .refreshable {
-                await model.search()
+        }
+        .navigationTitle("Recipes")
+        .refreshable { await model.search() }
+        .sheet(isPresented: $isShowingPreferences) {
+            NavigationStack {
+                PreferencesView()
+                    .toolbar {
+                        Button("Done") { isShowingPreferences = false }
+                    }
             }
         }
     }
 
-    // iPhone pushes the detail screen; iPad shows it in the right-hand pane.
-    @ViewBuilder
-    private func row(for recipe: RecipeMatch) -> some View {
-        let label = RecipeRow(recipe: recipe, isFavorite: history.isLiked(recipe))
-        if showsSideBySide {
-            Button {
-                selectedRecipe = recipe
-            } label: {
-                label
+    // Golden rule "reduce short-term memory load": the active diet rules are always visible here.
+    private var preferencesButton: some View {
+        Button {
+            if let onEditPreferences {
+                onEditPreferences()
+            } else {
+                isShowingPreferences = true
             }
-            .buttonStyle(.plain)
-            .listRowBackground(selectedRecipe?.id == recipe.id ? Color.accentColor.opacity(0.15) : nil)
-        } else {
-            NavigationLink {
-                RecipeDetailView(recipe: recipe)
-            } label: {
-                label
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var selectedRecipeDetail: some View {
-        if let selectedRecipe {
-            RecipeDetailView(recipe: selectedRecipe)
-                .id(selectedRecipe.id)
-        } else {
-            EmptyStateView(
-                title: "Pick a recipe",
-                systemImage: "hand.tap",
-                message: "Its ingredients and instructions will show here."
-            )
-            .frame(maxHeight: .infinity)
-        }
-    }
-
-    private func favoriteButton(for recipe: RecipeMatch) -> some View {
-        let isFavorite = history.isLiked(recipe)
-        return Button {
-            history.toggleLike(recipe)
         } label: {
-            Label(
-                isFavorite ? "Unfavorite" : "Favorite",
-                systemImage: isFavorite ? "heart.slash" : "heart"
-            )
+            Label(model.preferences.summary ?? "No meal preferences set", systemImage: "slider.horizontal.3")
+                .foregroundStyle(.secondary)
         }
-        .tint(.pink)
+        .accessibilityLabel("Meal preferences: \(model.preferences.summary ?? "none set")")
+    }
+
+    @ViewBuilder
+    private var statusMessages: some View {
+        if model.isShowingOfflineResults {
+            Label("You're offline. Showing demo recipes.", systemImage: "wifi.slash")
+                .font(.caption)
+                .foregroundStyle(.orange)
+        } else if model.isUsingDemoData {
+            Label("Showing demo recipes. Add a Spoonacular key, or try again tomorrow if the daily limit was reached.", systemImage: "shippingbox")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        if let errorMessage = model.errorMessage {
+            Text(errorMessage)
+                .font(.footnote)
+                .foregroundStyle(.red)
+        }
     }
 }
 
@@ -223,6 +122,7 @@ private struct RecipeRow: View {
             }
             .frame(width: 56, height: 56)
             .clipShape(RoundedRectangle(cornerRadius: 8))
+            .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(recipe.title)
@@ -240,16 +140,12 @@ private struct RecipeRow: View {
                     .accessibilityLabel("Favorite")
             }
         }
-        .contentShape(Rectangle())
     }
 }
 
 #Preview {
-    let session = SampleData.makePreviewSession()
     NavigationStack {
         RecipesView()
     }
-    .modelContainer(session.container)
-    .environment(RecipeSearchModel(account: session.account, household: session.account.household!, context: session.container.mainContext))
-    .environment(SavedRecipeStore(user: session.account.user, context: session.container.mainContext))
+    .previewEnvironment(SampleData.makePreviewSession())
 }

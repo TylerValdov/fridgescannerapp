@@ -17,7 +17,7 @@ struct HomeView: View {
     var onFindRecipes: () -> Void = {}
 
     private var firstName: String {
-        model.account.user.displayName.components(separatedBy: " ").first ?? model.account.user.displayName
+        model.account.user.firstName
     }
 
     var body: some View {

@@ -2,200 +2,84 @@
 //  HouseholdView.swift
 //  fridgescannerapp
 //
-//  The household's members, the invite code, Face ID sign-in, and signing
-//  out. Admins can also rename the household and remove members.
+//  The household's name, invite code and members, a link to the meal
+//  preferences, and signing out. Admins can also remove members.
 //
 
 import SwiftUI
-import SwiftData
-import UIKit
 
 struct HouseholdView: View {
-    /// The action waiting for the user to confirm.
-    private enum Confirmation {
-        case removeMember(User)
-        case signOut
-    }
-
     @Environment(AuthModel.self) private var auth
     @Environment(RecipeSearchModel.self) private var model
-    @State private var householdName = ""
-    @State private var pendingConfirmation: Confirmation?
-    @State private var isShowingConfirmation = false
-    @State private var copiedInviteCode = false
+    @State private var memberToRemove: User?
 
     private var account: Account { model.account }
     private var household: Household { model.household }
 
-    private var confirmationTitle: String {
-        switch pendingConfirmation {
-        case .removeMember(let member): "Remove \(member.displayName)?"
-        case .signOut: "Sign out?"
-        case nil: ""
-        }
-    }
-
     var body: some View {
         List {
-            householdSection
-            if account.canManageMembers {
-                inviteSection
-            }
-            membersSection
-            signInSection
-        }
-        .navigationTitle("Household")
-        .onAppear { householdName = household.name }
-        // Error prevention: removing someone and signing out both ask first.
-        // One dialog for the whole screen, attached to the List: SwiftUI doesn't
-        // reliably show two dialogs on one view, and a dialog attached to a
-        // button inside a list row can close without running its action.
-        .confirmationDialog(
-            confirmationTitle,
-            // A separate flag, as in Apple's example: the pending action stays set
-            // while the dialog closes, so its button always has something to run.
-            isPresented: $isShowingConfirmation,
-            titleVisibility: .visible,
-            presenting: pendingConfirmation
-        ) { confirmation in
-            switch confirmation {
-            case .removeMember(let member):
-                Button("Remove", role: .destructive) {
-                    auth.remove(member)
+            Section("Household") {
+                LabeledContent("Name", value: household.name)
+                LabeledContent("Your role", value: account.role.displayName)
+                // Polymorphism: only AdminAccount can manage members
+                if account.canManageMembers {
+                    LabeledContent("Invite code", value: household.inviteCode)
+                        .textSelection(.enabled)
                 }
-            case .signOut:
+            }
+
+            Section {
+                ForEach(household.sortedMembers) { member in
+                    LabeledContent(member === account.user ? "\(member.displayName) (You)" : member.displayName,
+                                   value: member.role.displayName)
+                        .swipeActions {
+                            if auth.canRemove(member) {
+                                Button("Remove", role: .destructive) {
+                                    memberToRemove = member
+                                }
+                            }
+                        }
+                }
+            } header: {
+                Text("Members")
+            } footer: {
+                if account.canManageMembers {
+                    Text("Share the invite code so others can join. Swipe left on a member to remove them.")
+                }
+            }
+
+            Section {
+                // On iPhone this is the way to Preferences, since it isn't a tab there.
+                NavigationLink {
+                    PreferencesView()
+                } label: {
+                    Label("Meal Preferences", systemImage: "slider.horizontal.3")
+                }
                 Button("Sign Out", role: .destructive) {
                     auth.signOut()
                 }
             }
-        } message: { confirmation in
-            switch confirmation {
-            case .removeMember:
-                Text("They'll lose access to this fridge, and their favorites will be deleted. They can rejoin with the invite code.")
-            case .signOut:
-                Text("You'll need your password or Face ID to sign back in.")
-            }
         }
-    }
-
-    // MARK: - Sections
-
-    @ViewBuilder
-    private var householdSection: some View {
-        Section("Household") {
-            if account.canManageMembers {
-                TextField("Household name", text: $householdName)
-                    .submitLabel(.done)
-                    .onSubmit { auth.renameHousehold(to: householdName) }
-                if let problem = householdNameProblem(householdName) {
-                    Text(problem)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                }
-            } else {
-                LabeledContent("Name", value: household.name)
+        .navigationTitle("Household")
+        // Error prevention: removing someone asks first.
+        .confirmationDialog(
+            "Remove \(memberToRemove?.displayName ?? "member")?",
+            isPresented: Binding(get: { memberToRemove != nil }, set: { if !$0 { memberToRemove = nil } }),
+            titleVisibility: .visible,
+            presenting: memberToRemove
+        ) { member in
+            Button("Remove", role: .destructive) {
+                auth.remove(member)
             }
-            LabeledContent("Your role", value: account.role.displayName)
+        } message: { _ in
+            Text("They'll lose access to this fridge, and their favorites will be deleted.")
         }
-    }
-
-    private var inviteSection: some View {
-        Section {
-            LabeledContent("Invite code") {
-                Text(household.inviteCode)
-                    .font(.body.monospaced())
-                    .textSelection(.enabled)
-            }
-            Button {
-                UIPasteboard.general.string = household.inviteCode
-                copiedInviteCode = true
-            } label: {
-                Label(copiedInviteCode ? "Copied" : "Copy Code", systemImage: copiedInviteCode ? "checkmark" : "doc.on.doc")
-            }
-            ShareLink(item: "Join \(household.name) on Fridge Scanner with invite code \(household.inviteCode).") {
-                Label("Share Invite", systemImage: "square.and.arrow.up")
-            }
-        } header: {
-            Text("Invite")
-        } footer: {
-            Text("New members choose \"Join with a code\" when they create an account.")
-        }
-    }
-
-    private var membersSection: some View {
-        Section {
-            ForEach(household.sortedMembers) { member in
-                MemberRow(member: member, isCurrentUser: member === account.user)
-                    .swipeActions {
-                        if auth.canRemove(member) {
-                            Button("Remove", role: .destructive) {
-                                pendingConfirmation = .removeMember(member)
-                                isShowingConfirmation = true
-                            }
-                        }
-                    }
-            }
-        } header: {
-            Text("Members")
-        } footer: {
-            if account.canManageMembers {
-                Text("Swipe left on a member to remove them.")
-            }
-        }
-    }
-
-    private var signInSection: some View {
-        Section("Sign-In") {
-            if let biometryName = auth.biometryName {
-                Toggle(
-                    "Sign in with \(biometryName)",
-                    isOn: Binding(
-                        get: { auth.isBiometricSignInEnabled(for: account) },
-                        set: { auth.setBiometricSignIn($0, for: account) }
-                    )
-                )
-            }
-            Button("Sign Out", role: .destructive) {
-                pendingConfirmation = .signOut
-                isShowingConfirmation = true
-            }
-        }
-    }
-}
-
-private struct MemberRow: View {
-    let member: User
-    let isCurrentUser: Bool
-
-    var body: some View {
-        HStack {
-            Image(systemName: member.role == .admin ? "person.crop.circle.badge.checkmark" : "person.crop.circle")
-                .font(.title2)
-                .foregroundStyle(.tint)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading) {
-                Text(isCurrentUser ? "\(member.displayName) (You)" : member.displayName)
-                Text("@\(member.username)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            Text(member.role.displayName)
-                .font(.caption.weight(.semibold))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(.tint.opacity(0.15), in: Capsule())
-        }
-        .accessibilityElement(children: .combine)
     }
 }
 
 #Preview {
-    let session = SampleData.makePreviewSession()
     NavigationStack {
         HouseholdView()
     }
-    .modelContainer(session.container)
-    .environment(AuthModel(context: session.container.mainContext))
-    .environment(RecipeSearchModel(account: session.account, household: session.account.household!, context: session.container.mainContext))
+    .previewEnvironment(SampleData.makePreviewSession())
 }

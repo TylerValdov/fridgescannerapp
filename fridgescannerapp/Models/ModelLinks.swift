@@ -34,6 +34,16 @@ extension Household {
         context.delete(item)
     }
 
+    func addShoppingItem(_ item: ShoppingListItem, in context: ModelContext) {
+        context.insert(item)
+        item.household = self
+    }
+
+    func removeShoppingItem(_ item: ShoppingListItem, in context: ModelContext) {
+        item.household = nil
+        context.delete(item)
+    }
+
     func attachPreferences(_ preferences: MealPreferences, in context: ModelContext) {
         context.insert(preferences)
         preferences.household = self
