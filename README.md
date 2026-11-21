@@ -54,6 +54,14 @@ On iPad (any regular-width window), `ContentView` swaps the tab bar for a layout
 | Plan from the kitchen | On the dashboard, see what expires in the next 3 days, check off shopping items and move them to the fridge, and open a favorite, all without leaving Home |
 | Compare recipes side by side | Tap through results while the details update beside the list; add missing ingredients or mark one cooked without losing your place. With a keyboard, ⌘F runs Find Recipes |
 
+## Running the tests
+
+1. Pick an **iPhone simulator** (the UI test uses the iPhone tab bar).
+2. Press **⌘U**. Results show in the Test navigator (⌘6).
+
+- **Unit tests** (`fridgescannerappTests`, Swift Testing): ingredient matching, the scanner's product names, sign-up rules, password hashing, the shopping list, fridge Undo, and grouping recipes by missing ingredients. They use an in-memory copy of the demo data and the demo recipes, so they don't change saved data or spend API quota.
+- **UI test** (`fridgescannerappUITests`, XCTest): signs in as `dana`, adds an item on the Fridge tab, checks it appears, then deletes it, so the demo fridge is unchanged after each run.
+
 ## Project structure
 
 ```
