@@ -60,11 +60,12 @@ final class RecipeSearchModel {
     private var detailsCache: [Int: RecipeDetails] = [:]
     private var suggestionTask: Task<Void, Never>?
 
-    init(account: Account, household: Household, context: ModelContext) {
+    /// `provider` is only passed in by tests, to use the demo recipes and spend no API quota.
+    init(account: Account, household: Household, context: ModelContext, provider: RecipeProvider? = nil) {
         self.account = account
         self.household = household
         self.modelContext = context
-        self.provider = RecipeProvider.makeDefault()
+        self.provider = provider ?? RecipeProvider.makeDefault()
 
         if let existing = household.preferences {
             self.preferences = existing

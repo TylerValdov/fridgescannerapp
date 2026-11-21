@@ -2,7 +2,7 @@
 
 CS 3714 final project. Fridge Scanner helps a household that shares a fridge cook with what it already has. Members add what's in the fridge, and the app finds recipes they can make now or with only a few more ingredients, following the household's diet rules. Missing ingredients go on a shared shopping list, and cooking a recipe clears what it used out of the fridge.
 
-Runs on **iPhone** (a tab bar: Home, Fridge, Recipes, Shopping, Household) and **iPad** (a sidebar with all six sections, including Preferences).
+Runs on **iPhone** (a tab bar: Home, Fridge, Recipes, Shopping, Household) and **iPad** (a sidebar with all six sections, a kitchen dashboard and a side-by-side recipe browser; see [iPad layout](#ipad-layout)).
 
 ## Setup
 
@@ -37,6 +37,21 @@ The app adds two households on first launch. Every demo account's password is **
 | Offline mode: saved data works as usual, and recipes fall back to demo data | Everywhere |
 
 Passwords are stored only as salted SHA-256 hashes (`Models/AuthModel.swift`), never as plain text.
+
+## iPad layout
+
+On iPad (any regular-width window), `ContentView` swaps the tab bar for a layout built for planning from the kitchen. In Split View or Slide Over, a narrow window gets the iPhone layout.
+
+| iPad view | What's different from iPhone | File |
+| --- | --- | --- |
+| Sidebar | All six sections in a sidebar, including Preferences, instead of 5 tabs | `ContentView.swift` |
+| Kitchen dashboard (Home) | Use Soon, Shopping List, Favorites and Recently Cooked side by side in cards | `KitchenDashboardView.swift` |
+| Recipe browser (Recipes) | Results on the left and the chosen recipe's details on the right, instead of pushing a new screen | `RecipeBrowserView.swift` |
+
+| iPad activity | How |
+| --- | --- |
+| Plan from the kitchen | On the dashboard, see what expires in the next 3 days, check off shopping items and move them to the fridge, and open a favorite, all without leaving Home |
+| Compare recipes side by side | Tap through results while the details update beside the list; add missing ingredients or mark one cooked without losing your place. With a keyboard, ⌘F runs Find Recipes |
 
 ## Project structure
 

@@ -72,7 +72,8 @@ struct ShoppingListView: View {
     }
 }
 
-private struct ShoppingItemRow: View {
+/// One checkable item. Also used by the iPad dashboard (KitchenDashboardView).
+struct ShoppingItemRow: View {
     let item: ShoppingListItem
     let onToggle: () -> Void
 

@@ -7,7 +7,8 @@
 //  The main app for a signed-in account. iPhone gets a tab bar; iPad (or any
 //  wide window) gets a sidebar, so each platform has its own layout.
 //  iPhone shows 5 tabs (any more would add a "More" tab), so Preferences
-//  lives inside Household there. The iPad sidebar lists all 6 sections.
+//  lives inside Household there. The iPad sidebar lists all 6 sections, and
+//  iPad gets its own Home (KitchenDashboardView) and Recipes (RecipeBrowserView).
 //
 
 import SwiftUI
@@ -118,13 +119,22 @@ struct ContentView: View {
     private func screen(for section: AppSection, inSidebar: Bool) -> some View {
         switch section {
         case .home:
-            // HomeView has its own NavigationStack.
-            HomeView(onFindRecipes: { selection = .recipes })
+            // Both have their own NavigationStack.
+            if inSidebar {
+                KitchenDashboardView(onFindRecipes: { selection = .recipes })
+            } else {
+                HomeView(onFindRecipes: { selection = .recipes })
+            }
         case .fridge:
             NavigationStack { IngredientEntryView() }
         case .recipes:
-            // iPad switches to the Preferences section; iPhone opens it as a sheet.
-            NavigationStack { RecipesView(onEditPreferences: inSidebar ? { selection = .preferences } : nil) }
+            // iPad shows details beside the list and switches to the Preferences
+            // section; iPhone pushes details and opens Preferences as a sheet.
+            if inSidebar {
+                RecipeBrowserView(onEditPreferences: { selection = .preferences })
+            } else {
+                NavigationStack { RecipesView() }
+            }
         case .shopping:
             NavigationStack { ShoppingListView() }
         case .household:
