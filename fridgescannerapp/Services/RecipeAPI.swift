@@ -197,7 +197,8 @@ final class MockRecipeProvider: RecipeProvider {
         return recipe.details
     }
 
-    private static let commonIngredients = [
+    /// Also used by the scanner to simplify product names.
+    static let commonIngredients = [
         "apple", "avocado", "bacon", "banana", "basil", "beef", "bell pepper", "black beans",
         "bread", "broccoli", "butter", "cabbage", "canned tomatoes", "carrots", "cauliflower",
         "celery", "cheddar cheese", "chicken breast", "chicken thighs", "chickpeas", "cilantro",

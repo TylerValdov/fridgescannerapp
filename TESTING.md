@@ -16,6 +16,7 @@ Unit tests: `fridgescannerappTests/fridgescannerappTests.swift` (Swift Testing).
 | Test | Requirement | Steps | Expected result | Actual result | Pass/Fail |
 |---|---|---|---|---|---|
 | `ingredientNameHelpers` | 2, 3 | Normalize, match and pluralize sample names | "  Eggs " → "eggs"; "egg" matches "Eggs"; "garlic" matches "garlic cloves"; "1 item", "3 items" | As expected | Pass |
+| `productNamesBecomeIngredientNames` | 2 | Turn scanned product names into ingredient names | "Great Value Whole Milk" → "milk"; "Organic Green Onions" → "green onions"; "Graham Crackers" doesn't match "ham"; unknown names are kept | As expected | Pass |
 | `usernameRules` | 1 | Check valid and invalid usernames | "dana" is fine; too short, too long and symbols are rejected | As expected | Pass |
 | `passwordRules` | 1, Security | Check valid and invalid passwords | "Fridge123" is fine; short, no number and no letter are rejected | As expected | Pass |
 | `passwordHashing` | Security | Hash a password, verify right and wrong passwords | Right password verifies, wrong one doesn't; same password hashes differently (salt) | As expected | Pass |
@@ -24,7 +25,7 @@ Unit tests: `fridgescannerappTests/fridgescannerappTests.swift` (Swift Testing).
 | `recipesAreGroupedByMissingCount` | 3 | Search the demo recipes with the demo fridge | Every recipe is in the right section; none exceed "max missing" | As expected | Pass |
 | `testSignInAddAndRemoveFridgeItem` (UI) | 1, 2 | Sign in as `dana`, open Fridge, add a uniquely named item, swipe to delete it | Sign-in succeeds; item appears; item is gone after deleting | As expected | Pass |
 
-Last full run: Nov 20, 2026, iPhone 17 simulator (iOS 27.2), 8 of 8 passed. **Sprint:** _fill in_. Add a screenshot of the passing run in the Test navigator here.
+Last full run: Nov 20, 2026, iPhone 17 simulator (iOS 27.2), 9 of 9 passed. **Sprint:** _fill in_. Add a screenshot of the passing run in the Test navigator here.
 
 ## Manual misuse cases
 

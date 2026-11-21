@@ -2,8 +2,9 @@
 //  IngredientEntryView.swift
 //  fridgescannerapp
 //
-//  The Fridge tab: add ingredients (with autocomplete and an optional
-//  expiration date), see who added what, and swipe to remove with Undo.
+//  The Fridge tab: add ingredients (by typing with autocomplete, or by
+//  scanning a barcode) with an optional expiration date, see who added what,
+//  and swipe to remove with Undo.
 //
 
 import SwiftUI
@@ -12,6 +13,7 @@ import SwiftData
 struct IngredientEntryView: View {
     @Environment(RecipeSearchModel.self) private var model
     @State private var tracksExpiration = false
+    @State private var isScanning = false
     @State private var expirationDate = Calendar.current.date(byAdding: .day, value: 7, to: .now) ?? .now
 
     private var chosenExpiration: Date? {
@@ -36,6 +38,11 @@ struct IngredientEntryView: View {
 
                     Button("Add") { model.addIngredient(expirationDate: chosenExpiration) }
                         .disabled(model.newIngredientText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+
+                // Only on devices with a camera; the simulator has none.
+                if ScannerView.isAvailable {
+                    Button("Scan a Barcode", systemImage: "barcode.viewfinder") { isScanning = true }
                 }
 
                 // Error prevention: duplicates get a visible message instead of being ignored.
@@ -78,6 +85,10 @@ struct IngredientEntryView: View {
         }
         .navigationTitle("Fridge")
         .fridgeUndoBanner()
+        // A scan fills in the name; the user can still edit it, set a date, then tap Add.
+        .sheet(isPresented: $isScanning) {
+            ScannerView { name in model.newIngredientText = name }
+        }
     }
 }
 

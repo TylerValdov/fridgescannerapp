@@ -2,9 +2,9 @@
 //  fridgescannerappTests.swift
 //  fridgescannerapp
 //
-//  Unit tests (Swift Testing) for the helpers, the sign-up rules, password
-//  hashing, the shopping list, Undo in the fridge, and grouping recipes by
-//  how many ingredients are missing. Each test builds the demo data in an
+//  Unit tests (Swift Testing) for the helpers, the scanner's product names,
+//  the sign-up rules, password hashing, the shopping list, Undo in the
+//  fridge, and grouping recipes by how many ingredients are missing. Each test builds the demo data in an
 //  in-memory store, so nothing touches the app's real data or the API.
 //
 
@@ -27,6 +27,16 @@ struct fridgescannerappTests {
         #expect(!ingredientNamesMatch("", "rice"))
         #expect(pluralize("item", count: 1) == "1 item")
         #expect(pluralize("item", count: 3) == "3 items")
+    }
+
+    // MARK: - Scanner (requirement 2)
+
+    @Test func productNamesBecomeIngredientNames() {
+        #expect(ingredientName(fromProduct: "Great Value Whole Milk") == "milk")
+        #expect(ingredientName(fromProduct: "Large Brown Eggs") == "eggs")
+        #expect(ingredientName(fromProduct: "Organic Green Onions") == "green onions")  // longest match wins
+        #expect(ingredientName(fromProduct: "Honey Maid Graham Crackers") == "honey")   // not "ham"
+        #expect(ingredientName(fromProduct: "  Sparkling Water ") == "sparkling water") // no match: keep the name
     }
 
     // MARK: - Sign-up rules (requirement 1)

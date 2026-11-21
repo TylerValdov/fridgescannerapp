@@ -30,6 +30,7 @@ The app adds two households on first launch. Every demo account's password is **
 | Sign in, and create an account that starts or joins a household | Sign In |
 | Two user types: the admin sets diet rules, renames the household and removes members; members view them | Household, Preferences |
 | Shared fridge: add with autocomplete and an optional expiration date, swipe to remove, Undo | Fridge |
+| Grocery scanner: scan a barcode, look it up on [Open Food Facts](https://world.openfoodfacts.org) (free, no key), and fill in a simple ingredient name. Needs a device with a camera, so the Scan button is hidden in the simulator (Tyler) | Fridge (`ScannerView.swift`) |
 | Recipe search grouped by how many ingredients are missing | Recipes |
 | Recipe details, favorites, and Mark as Cooked (removes the ingredients used, with Undo) | Recipe details, Home |
 | Meal preferences: 11 diets, 12 intolerances, must-include and excluded ingredients, max missing | Preferences |
