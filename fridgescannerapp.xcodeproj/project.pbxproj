@@ -6,11 +6,40 @@
 	objectVersion = 110;
 	objects = {
 
+/* Begin PBXContainerItemProxy section */
+		259B673030B12294003B973E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F28D201C306D51B1007E73E9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F28D2023306D51B1007E73E9;
+			remoteInfo = fridgescannerapp;
+		};
+		259B673230B122A5003B973E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F28D201C306D51B1007E73E9 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F28D2023306D51B1007E73E9;
+			remoteInfo = fridgescannerapp;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		259B671E30B1213F003B973E /* fridgescannerappTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = fridgescannerappTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		259B672930B12141003B973E /* fridgescannerappUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = fridgescannerappUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F28D2024306D51B1007E73E9 /* fridgescannerapp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = fridgescannerapp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		259B671F30B1213F003B973E /* fridgescannerappTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = fridgescannerappTests;
+			sourceTree = "<group>";
+		};
+		259B672A30B12141003B973E /* fridgescannerappUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = fridgescannerappUITests;
+			sourceTree = "<group>";
+		};
 		F28D2026306D51B1007E73E9 /* fridgescannerapp */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = fridgescannerapp;
@@ -19,6 +48,16 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		259B671B30B1213F003B973E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		259B672630B12141003B973E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
 		F28D2021306D51B1007E73E9 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			files = (
@@ -31,6 +70,8 @@
 			isa = PBXGroup;
 			children = (
 				F28D2026306D51B1007E73E9 /* fridgescannerapp */,
+				259B671F30B1213F003B973E /* fridgescannerappTests */,
+				259B672A30B12141003B973E /* fridgescannerappUITests */,
 				F28D2025306D51B1007E73E9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -39,6 +80,8 @@
 			isa = PBXGroup;
 			children = (
 				F28D2024306D51B1007E73E9 /* fridgescannerapp.app */,
+				259B671E30B1213F003B973E /* fridgescannerappTests.xctest */,
+				259B672930B12141003B973E /* fridgescannerappUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -46,6 +89,48 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		259B671D30B1213F003B973E /* fridgescannerappTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 259B672230B1213F003B973E /* Build configuration list for PBXNativeTarget "fridgescannerappTests" */;
+			buildPhases = (
+				259B671A30B1213F003B973E /* Sources */,
+				259B671B30B1213F003B973E /* Frameworks */,
+				259B671C30B1213F003B973E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				259B673330B122A5003B973E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				259B671F30B1213F003B973E /* fridgescannerappTests */,
+			);
+			name = fridgescannerappTests;
+			productName = fridgescannerappTests;
+			productReference = 259B671E30B1213F003B973E /* fridgescannerappTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		259B672830B12141003B973E /* fridgescannerappUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 259B672D30B12141003B973E /* Build configuration list for PBXNativeTarget "fridgescannerappUITests" */;
+			buildPhases = (
+				259B672530B12141003B973E /* Sources */,
+				259B672630B12141003B973E /* Frameworks */,
+				259B672730B12141003B973E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				259B673130B12294003B973E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				259B672A30B12141003B973E /* fridgescannerappUITests */,
+			);
+			name = fridgescannerappUITests;
+			productName = fridgescannerappUITests;
+			productReference = 259B672930B12141003B973E /* fridgescannerappUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		F28D2023306D51B1007E73E9 /* fridgescannerapp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F28D202F306D51B2007E73E9 /* Build configuration list for PBXNativeTarget "fridgescannerapp" */;
@@ -71,9 +156,17 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2700;
+				LastSwiftUpdateCheck = 2720;
 				LastUpgradeCheck = 2700;
 				TargetAttributes = {
+					259B671D30B1213F003B973E = {
+						CreatedOnToolsVersion = 27.2;
+						TestTargetID = F28D2023306D51B1007E73E9;
+					};
+					259B672830B12141003B973E = {
+						CreatedOnToolsVersion = 27.2;
+						TestTargetID = F28D2023306D51B1007E73E9;
+					};
 					F28D2023306D51B1007E73E9 = {
 						CreatedOnToolsVersion = 27.0;
 					};
@@ -94,11 +187,23 @@
 			projectRoot = "";
 			targets = (
 				F28D2023306D51B1007E73E9 /* fridgescannerapp */,
+				259B671D30B1213F003B973E /* fridgescannerappTests */,
+				259B672830B12141003B973E /* fridgescannerappUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		259B671C30B1213F003B973E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		259B672730B12141003B973E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
 		F28D2022306D51B1007E73E9 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			files = (
@@ -107,6 +212,16 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		259B671A30B1213F003B973E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		259B672530B12141003B973E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
 		F28D2020306D51B1007E73E9 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			files = (
@@ -114,7 +229,118 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		259B673130B12294003B973E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F28D2023306D51B1007E73E9 /* fridgescannerapp */;
+			targetProxy = 259B673030B12294003B973E /* PBXContainerItemProxy */;
+		};
+		259B673330B122A5003B973E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = F28D2023306D51B1007E73E9 /* fridgescannerapp */;
+			targetProxy = 259B673230B122A5003B973E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		259B672330B1213F003B973E /* Debug configuration for PBXNativeTarget "fridgescannerappTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = team1.fridgescannerappTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/fridgescannerapp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/fridgescannerapp";
+				XROS_DEPLOYMENT_TARGET = 27.2;
+			};
+			name = Debug;
+		};
+		259B672430B1213F003B973E /* Release configuration for PBXNativeTarget "fridgescannerappTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = team1.fridgescannerappTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/fridgescannerapp.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/fridgescannerapp";
+				XROS_DEPLOYMENT_TARGET = 27.2;
+			};
+			name = Release;
+		};
+		259B672E30B12141003B973E /* Debug configuration for PBXNativeTarget "fridgescannerappUITests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = team1.fridgescannerappUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = fridgescannerapp;
+				XROS_DEPLOYMENT_TARGET = 27.2;
+			};
+			name = Debug;
+		};
+		259B672F30B12141003B973E /* Release configuration for PBXNativeTarget "fridgescannerappUITests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.6;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = team1.fridgescannerappUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = fridgescannerapp;
+				XROS_DEPLOYMENT_TARGET = 27.2;
+			};
+			name = Release;
+		};
 		F28D202D306D51B2007E73E9 /* Debug configuration for PBXProject "fridgescannerapp" */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -299,6 +525,22 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		259B672230B1213F003B973E /* Build configuration list for PBXNativeTarget "fridgescannerappTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				259B672330B1213F003B973E /* Debug configuration for PBXNativeTarget "fridgescannerappTests" */,
+				259B672430B1213F003B973E /* Release configuration for PBXNativeTarget "fridgescannerappTests" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		259B672D30B12141003B973E /* Build configuration list for PBXNativeTarget "fridgescannerappUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				259B672E30B12141003B973E /* Debug configuration for PBXNativeTarget "fridgescannerappUITests" */,
+				259B672F30B12141003B973E /* Release configuration for PBXNativeTarget "fridgescannerappUITests" */,
+			);
+			defaultConfigurationName = Release;
+		};
 		F28D201F306D51B1007E73E9 /* Build configuration list for PBXProject "fridgescannerapp" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
