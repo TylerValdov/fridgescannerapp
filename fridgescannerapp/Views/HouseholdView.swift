@@ -3,7 +3,8 @@
 //  fridgescannerapp
 //
 //  The household's name, invite code and members, a link to the meal
-//  preferences, and signing out. Admins can also remove members.
+//  preferences, and signing out. Admins can also rename the household and
+//  remove members.
 //
 
 import SwiftUI
@@ -12,6 +13,7 @@ struct HouseholdView: View {
     @Environment(AuthModel.self) private var auth
     @Environment(RecipeSearchModel.self) private var model
     @State private var memberToRemove: User?
+    @State private var householdName = ""
 
     private var account: Account { model.account }
     private var household: Household { model.household }
@@ -19,9 +21,15 @@ struct HouseholdView: View {
     var body: some View {
         List {
             Section("Household") {
-                LabeledContent("Name", value: household.name)
+                // Polymorphism: only AdminAccount can manage the household
+                if account.canManageMembers {
+                    TextField("Household name", text: $householdName)
+                        .submitLabel(.done)
+                        .onSubmit { auth.renameHousehold(to: householdName) }
+                } else {
+                    LabeledContent("Name", value: household.name)
+                }
                 LabeledContent("Your role", value: account.role.displayName)
-                // Polymorphism: only AdminAccount can manage members
                 if account.canManageMembers {
                     LabeledContent("Invite code", value: household.inviteCode)
                         .textSelection(.enabled)
@@ -61,6 +69,7 @@ struct HouseholdView: View {
             }
         }
         .navigationTitle("Household")
+        .onAppear { householdName = household.name }
         // Error prevention: removing someone asks first.
         .confirmationDialog(
             "Remove \(memberToRemove?.displayName ?? "member")?",
