@@ -2,8 +2,8 @@
 //  AuthModel.swift
 //  fridgescannerapp
 //
-//  Signing in and out, creating accounts, and removing household members
-//  (admins only). Created once at launch and shared through the
+//  Signing in and out, creating accounts, and renaming the household and
+//  removing members (admins only). Created once at launch and shared through the
 //  environment. Also holds the password hashing and the sign-up rules.
 //
 
@@ -84,6 +84,13 @@ final class AuthModel {
         household.addMember(user, in: context)
         try context.save()
         account = Account.make(for: user)
+    }
+
+    /// Admins only. Ignores names that break the household-name rule.
+    func renameHousehold(to name: String) {
+        guard let account, account.canManageMembers, householdNameProblem(name) == nil else { return }
+        account.household?.name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        try? context.save()
     }
 
     /// Admins can remove anyone in their household except themselves.

@@ -28,7 +28,7 @@ The app adds two households on first launch. Every demo account's password is **
 | Feature | Screen |
 | --- | --- |
 | Sign in, and create an account that starts or joins a household | Sign In |
-| Two user types: the admin sets diet rules and can remove members; members view them | Household, Preferences |
+| Two user types: the admin sets diet rules, renames the household and removes members; members view them | Household, Preferences |
 | Shared fridge: add with autocomplete and an optional expiration date, swipe to remove, Undo | Fridge |
 | Recipe search grouped by how many ingredients are missing | Recipes |
 | Recipe details, favorites, and Mark as Cooked (removes the ingredients used, with Undo) | Recipe details, Home |
