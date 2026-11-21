@@ -23,9 +23,22 @@ struct HouseholdView: View {
             Section("Household") {
                 // Polymorphism: only AdminAccount can manage the household
                 if account.canManageMembers {
-                    TextField("Household name", text: $householdName)
-                        .submitLabel(.done)
-                        .onSubmit { auth.renameHousehold(to: householdName) }
+                    // Looks editable: a labeled field with a pencil, and Save once it changes.
+                    LabeledContent("Name") {
+                        HStack {
+                            TextField("Household name", text: $householdName)
+                                .multilineTextAlignment(.trailing)
+                                .foregroundStyle(.tint)
+                                .submitLabel(.done)
+                                .onSubmit { auth.renameHousehold(to: householdName) }
+                            Image(systemName: "pencil")
+                                .foregroundStyle(.secondary)
+                                .accessibilityHidden(true)
+                        }
+                    }
+                    if householdName != household.name && householdNameProblem(householdName) == nil {
+                        Button("Save Name") { auth.renameHousehold(to: householdName) }
+                    }
                 } else {
                     LabeledContent("Name", value: household.name)
                 }

@@ -50,9 +50,18 @@ struct SignInView: View {
                 }
 
                 Section {
-                    Button("Sign In", action: signIn)
-                        .frame(maxWidth: .infinity)
-                        .disabled(username.isEmpty || password.isEmpty)
+                    Button(action: signIn) {
+                        Text("Sign In")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .disabled(username.isEmpty || password.isEmpty)
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+
+                Section {
                     NavigationLink("Create an Account") {
                         CreateAccountView()
                     }
