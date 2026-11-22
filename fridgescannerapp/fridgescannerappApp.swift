@@ -13,6 +13,9 @@ import SwiftData
 
 @main
 struct fridgescannerappApp: App {
+    init() {
+            ExpirationNotifier.shared.setup()
+        }
     var body: some Scene {
         WindowGroup {
             RootView()
@@ -43,6 +46,8 @@ struct RootView: View {
                 ProgressView()
                     .onAppear {
                         SampleData.seedIfNeeded(in: modelContext)
+                        let items = (try? modelContext.fetch(FetchDescriptor<FridgeItem>())) ?? []  
+                        ExpirationNotifier.shared.sync(items)
                         auth = AuthModel(context: modelContext)
                     }
             }
