@@ -111,6 +111,7 @@ extension User {
 /// One ingredient in the household's fridge.
 @Model
 final class FridgeItem {
+    var id: UUID = UUID()
     var name: String            // Lowercase, as sent to the recipe search
     var expirationDate: Date?
     var dateAdded: Date
