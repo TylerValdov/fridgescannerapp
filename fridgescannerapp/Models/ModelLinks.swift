@@ -27,17 +27,20 @@ extension Household {
         context.insert(item)
         item.household = self
         item.addedBy = user
+        ExpirationNotifier.shared.schedule(for: item)      // <-- add
     }
 
     func removeItem(_ item: FridgeItem, in context: ModelContext) {
+        ExpirationNotifier.shared.cancel(for: item)        // <-- add
         item.household = nil
         context.delete(item)
     }
 
+
     func addShoppingItem(_ item: ShoppingListItem, in context: ModelContext) {
         context.insert(item)
         item.household = self
-    }
+    }    
 
     func removeShoppingItem(_ item: ShoppingListItem, in context: ModelContext) {
         item.household = nil
