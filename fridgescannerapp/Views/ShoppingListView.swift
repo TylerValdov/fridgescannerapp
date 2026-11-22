@@ -26,9 +26,13 @@ struct ShoppingListView: View {
                         .onChange(of: shopping.newItemText) { _, _ in
                             shopping.clearEntryMessage()
                         }
-                    Button("Add") { shopping.addItem() }
-                        .disabled(normalizedIngredientName(shopping.newItemText).isEmpty)
+
+                    Button("Add") {
+                        shopping.addItem()
+                    }
+                    .disabled(normalizedIngredientName(shopping.newItemText).isEmpty)
                 }
+
                 if let message = shopping.entryMessage {
                     Label(message, systemImage: "exclamationmark.circle")
                         .font(.footnote)
@@ -48,9 +52,12 @@ struct ShoppingListView: View {
                         description: Text("Add items here, or from a recipe's missing ingredients.")
                     )
                 }
+
                 ForEach(shopping.items) { item in
                     ShoppingItemRow(item: item) {
-                        withAnimation { shopping.toggle(item) }
+                        withAnimation {
+                            shopping.toggle(item)
+                        }
                     }
                 }
                 .onDelete(perform: shopping.remove)
@@ -59,8 +66,14 @@ struct ShoppingListView: View {
             if shopping.checkedCount > 0 {
                 Section {
                     Button("Move \(shopping.checkedCount) Checked to Fridge") {
-                        let count = withAnimation(.default) { shopping.moveCheckedToFridge() }
-                        toast = Toast(message: "Moved \(pluralize("item", count: count)) to the fridge", systemImage: "refrigerator")
+                        let count = withAnimation(.default) {
+                            shopping.moveCheckedToFridge()
+                        }
+
+                        toast = Toast(
+                            message: "Moved \(pluralize("item", count: count)) to the fridge",
+                            systemImage: "refrigerator"
+                        )
                     }
                 } footer: {
                     Text("They're added with no expiration date.")
@@ -68,6 +81,20 @@ struct ShoppingListView: View {
             }
         }
         .navigationTitle("Shopping List")
+        .safeAreaInset(edge: .bottom) {
+            NavigationLink {
+                NearbyStoresView()
+            } label: {
+                Label("Stores Nearby", systemImage: "map")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(.regularMaterial)
+        }
         .confirmationToast($toast)
     }
 }
@@ -81,11 +108,17 @@ struct ShoppingItemRow: View {
         // The whole row is the button, so it's an easy target at the store.
         Button(action: onToggle) {
             HStack {
-                Image(systemName: item.isChecked ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
+                Image(
+                    systemName: item.isChecked
+                        ? "checkmark.circle.fill"
+                        : "circle"
+                )
+                .font(.title2)
+
                 Text(item.name.capitalized)
                     .strikethrough(item.isChecked)
                     .foregroundStyle(item.isChecked ? .secondary : .primary)
+
                 Spacer()
             }
             .contentShape(Rectangle())
@@ -98,6 +131,7 @@ struct ShoppingItemRow: View {
 
 #Preview {
     let session = SampleData.makePreviewSession(role: .member)
+
     NavigationStack {
         ShoppingListView()
     }
