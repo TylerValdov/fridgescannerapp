@@ -4,6 +4,10 @@
 //
 //  Created by lending on 11/22/26.
 //
+//  Shown once, right after creating an account: asks for the person's own
+//  diet and food intolerances. They're saved on the User, used for recipe
+//  warnings, and can be changed later in Preferences.
+//
 
 import SwiftUI
 import SwiftData
@@ -29,14 +33,11 @@ struct DietaryOnboardingView: View {
                 }
 
                 Section {
-                    
                     Picker("Diet", selection: $selectedDiet) {
-                        Text("No Preference").tag(Diet.noPreference)
-                        Text("Gluten Free").tag(Diet.glutenFree)
-                        Text("Vegetarian").tag(Diet.vegetarian)
-                        Text("Pescetarian").tag(Diet.pescetarian)
+                        ForEach(Diet.personalOptions) { diet in
+                            Text(diet.displayName).tag(diet)
+                        }
                     }
-
                 } header: {
                     Text("Your Diet")
                 } footer: {

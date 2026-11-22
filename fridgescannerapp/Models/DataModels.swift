@@ -196,6 +196,10 @@ enum Diet: String, CaseIterable, Identifiable {
 
     var id: Self { self }
 
+    /// The diets a person can pick for themselves: the ones whose conflicts
+    /// can be spotted from ingredient names (see RecipeSearchModel.dietaryWarnings).
+    static let personalOptions: [Diet] = [.noPreference, .vegetarian, .lactoVegetarian, .ovoVegetarian, .vegan, .pescetarian, .glutenFree]
+
     /// nil means "don't send the parameter".
     var apiValue: String? {
         self == .noPreference ? nil : rawValue

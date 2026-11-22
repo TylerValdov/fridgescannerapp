@@ -59,6 +59,10 @@ struct IngredientEntryView: View {
                 }
 
                 Toggle("Expiration date", isOn: $tracksExpiration)
+                    // Asks for notification permission here, when reminders first become useful.
+                    .onChange(of: tracksExpiration) { _, isOn in
+                        if isOn { ExpirationNotifier.shared.requestPermissionIfNeeded() }
+                    }
                 if tracksExpiration {
                     DatePicker("Expires", selection: $expirationDate, in: Date.now..., displayedComponents: .date)
                 }

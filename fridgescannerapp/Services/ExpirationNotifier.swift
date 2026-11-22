@@ -4,6 +4,11 @@
 //
 //  Created by lending on 11/19/26.
 //
+//  Expiration reminders: a local notification at 9 AM on the day a fridge
+//  item expires. Reminders are scheduled when an item is added (through
+//  ModelLinks) and canceled when it's removed. Permission is asked the
+//  first time someone sets an expiration date, not at launch.
+//
 
 import Foundation
 import UserNotifications
@@ -13,11 +18,17 @@ final class ExpirationNotifier: NSObject, UNUserNotificationCenterDelegate {
 
     private let center = UNUserNotificationCenter.current()
     private let idPrefix = "expiry-"
-    private let notifyHour = 9          // notify at 9 AM on the expiration day
-    private let maxPending = 60         // iOS allows 64 pending notifications
+    private let notifyHour = 9          // Notify at 9 AM on the expiration day
+    private let maxPending = 60         // iOS keeps at most 64 pending notifications
 
+    /// Called at launch. Only sets the delegate; it doesn't ask for permission.
     func setup() {
         center.delegate = self
+    }
+
+    /// HIG: ask for permission in context, the first time it's useful. iOS
+    /// shows the prompt only once, so later calls do nothing.
+    func requestPermissionIfNeeded() {
         center.requestAuthorization(options: [.alert, .sound, .badge]) { _, _ in }
     }
 
@@ -41,13 +52,13 @@ final class ExpirationNotifier: NSObject, UNUserNotificationCenterDelegate {
         center.removePendingNotificationRequests(withIdentifiers: [identifier(for: item)])
     }
 
-    /// Rebuilds all expiration notifications from the given items.
+    /// Rebuilds every reminder from the given items, soonest first.
     func sync(_ items: [FridgeItem]) {
-        center.getPendingNotificationRequests { [center, idPrefix] requests in
-            let old = requests.map(\.identifier).filter { $0.hasPrefix(idPrefix) }
-            center.removePendingNotificationRequests(withIdentifiers: old)
-        }
+        // Clear everything first, right away. (These are the app's only
+        // notifications.) Clearing after scheduling would delete the new ones.
+        center.removeAllPendingNotificationRequests()
 
+        // Functional: keep items with a future reminder, sort by date, take the soonest
         items
             .compactMap { item in fireDate(for: item).map { (item, $0) } }
             .sorted { $0.1 < $1.1 }
@@ -59,6 +70,7 @@ final class ExpirationNotifier: NSObject, UNUserNotificationCenterDelegate {
         idPrefix + item.id.uuidString
     }
 
+    /// 9 AM on the expiration day, or nil if there's no date or it has passed.
     private func fireDate(for item: FridgeItem) -> Date? {
         guard let expiry = item.expirationDate else { return nil }
         let day = Calendar.current.startOfDay(for: expiry)
@@ -73,4 +85,3 @@ final class ExpirationNotifier: NSObject, UNUserNotificationCenterDelegate {
         [.banner, .sound]
     }
 }
-

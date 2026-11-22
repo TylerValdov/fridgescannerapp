@@ -2,17 +2,20 @@
 //  PreferencesView.swift
 //  fridgescannerapp
 //
-//  The household's diet rules, used by every member's recipe search. The
-//  admin can change them; members see them read-only.
+//  Two kinds of diet rules:
+//    - Personal: your own diet and intolerances. Anyone can change theirs,
+//      and recipes that conflict with them show warnings.
+//    - Household: the rules every member's recipe search follows. The admin
+//      can change them; members see them read-only.
 //
 
 import SwiftUI
 
 struct PreferencesView: View {
-
     @Environment(RecipeSearchModel.self) private var model
 
     private var canEdit: Bool {
+        // Polymorphism: AdminAccount and MemberAccount answer differently
         model.account.canEditPreferences
     }
 
@@ -27,14 +30,11 @@ struct PreferencesView: View {
             // MARK: - Personal Dietary Preferences
 
             Section {
-                
                 Picker("My Diet", selection: personalDietBinding) {
-                    Text("No Preference").tag(Diet.noPreference)
-                    Text("Gluten Free").tag(Diet.glutenFree)
-                    Text("Vegetarian").tag(Diet.vegetarian)
-                    Text("Pescetarian").tag(Diet.pescetarian)
+                    ForEach(Diet.personalOptions) { diet in
+                        Text(diet.displayName).tag(diet)
+                    }
                 }
-
             } header: {
                 Text("Personal Dietary Preferences")
             } footer: {

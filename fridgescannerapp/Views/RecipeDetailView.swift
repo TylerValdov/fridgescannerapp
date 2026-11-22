@@ -38,7 +38,7 @@ struct RecipeDetailView: View {
                         .fontWeight(.bold)
                     
                     if let details {
-                        let warnings = model.dietaryWarnings(for: details)
+                        let warnings = model.dietaryWarnings(for: recipe, details: details)
 
                         if !warnings.isEmpty {
                             VStack(alignment: .leading, spacing: 8) {
