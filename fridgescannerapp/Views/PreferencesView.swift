@@ -9,63 +9,183 @@
 import SwiftUI
 
 struct PreferencesView: View {
+
     @Environment(RecipeSearchModel.self) private var model
 
     private var canEdit: Bool {
-        // Polymorphism: AdminAccount and MemberAccount answer differently
         model.account.canEditPreferences
+    }
+
+    private var user: User {
+        model.account.user
     }
 
     var body: some View {
         @Bindable var preferences = model.preferences
 
         Form {
-            if !canEdit {
-                Label("Only \(model.household.admin?.displayName ?? "the admin") can change these.", systemImage: "lock")
+            // MARK: - Personal Dietary Preferences
+
+            Section {
+                
+                Picker("My Diet", selection: personalDietBinding) {
+                    Text("No Preference").tag(Diet.noPreference)
+                    Text("Gluten Free").tag(Diet.glutenFree)
+                    Text("Vegetarian").tag(Diet.vegetarian)
+                    Text("Pescetarian").tag(Diet.pescetarian)
+                }
+
+            } header: {
+                Text("Personal Dietary Preferences")
+            } footer: {
+                Text(
+                    "These preferences belong to your account and can be changed at any time."
+                )
+            }
+
+            Section {
+                ForEach(Intolerance.allCases) { intolerance in
+                    Toggle(
+                        intolerance.rawValue.capitalized,
+                        isOn: personalIntoleranceBinding(for: intolerance)
+                    )
+                }
+            } header: {
+                Text("My Food Intolerances")
+            } footer: {
+                Text(
+                    "Your personal dietary restrictions are used to show warnings on recipes."
+                )
+            }
+
+            // MARK: - Household Preferences
+
+            Section {
+                if !canEdit {
+                    Label(
+                        "Only \(model.household.admin?.displayName ?? "the admin") can change household preferences.",
+                        systemImage: "lock"
+                    )
                     .foregroundStyle(.secondary)
-            }
-
-            Group {
-                Picker("Diet", selection: $preferences.diet) {
-                    ForEach(Diet.allCases) { diet in
-                        Text(diet.displayName).tag(diet)
-                    }
                 }
 
-                Section {
+                Group {
+                    Picker("Household Diet", selection: $preferences.diet) {
+                        ForEach(Diet.allCases) { diet in
+                            Text(diet.displayName).tag(diet)
+                        }
+                    }
+
                     ForEach(Intolerance.allCases) { intolerance in
-                        Toggle(intolerance.rawValue.capitalized, isOn: binding(for: intolerance))
+                        Toggle(
+                            intolerance.rawValue.capitalized,
+                            isOn: binding(for: intolerance)
+                        )
                     }
-                } header: {
-                    Text("Intolerances")
-                } footer: {
-                    Text("Recipes containing these are left out.")
                 }
+                .disabled(!canEdit)
 
-                Section("Only recipes with") {
-                    IngredientListEditor(ingredients: $preferences.mustInclude, canEdit: canEdit)
-                }
-
-                Section("Leave out recipes with") {
-                    IngredientListEditor(ingredients: $preferences.excluded, canEdit: canEdit)
-                }
-
-                Stepper("Missing up to \(pluralize("ingredient", count: preferences.maxMissing))",
-                        value: $preferences.maxMissing, in: 1...5)
+            } header: {
+                Text("Household Dietary Preferences")
+            } footer: {
+                Text(
+                    "These restrictions are shared by everyone in the household. Only the admin can change them."
+                )
             }
-            .disabled(!canEdit)
+
+            Section("Only recipes with") {
+                IngredientListEditor(
+                    ingredients: $preferences.mustInclude,
+                    canEdit: canEdit
+                )
+            }
+
+            Section("Leave out recipes with") {
+                IngredientListEditor(
+                    ingredients: $preferences.excluded,
+                    canEdit: canEdit
+                )
+            }
+
+            Section {
+                Stepper(
+                    "Missing up to \(pluralize("ingredient", count: preferences.maxMissing))",
+                    value: $preferences.maxMissing,
+                    in: 1...5
+                )
+                .disabled(!canEdit)
+            }
         }
         .navigationTitle("Preferences")
-        .onDisappear { model.save() }
+        .onDisappear {
+            model.save()
+        }
     }
 
-    private func binding(for intolerance: Intolerance) -> Binding<Bool> {
+    // MARK: - Personal Diet Binding
+
+    private var personalDietBinding: Binding<Diet> {
+        Binding(
+            get: {
+                Diet(rawValue: user.personalDietRaw) ?? .noPreference
+            },
+            set: { newDiet in
+                user.personalDietRaw = newDiet.rawValue
+                model.save()
+            }
+        )
+    }
+
+    // MARK: - Personal Intolerance Binding
+
+    private func personalIntoleranceBinding(
+        for intolerance: Intolerance
+    ) -> Binding<Bool> {
+        Binding(
+            get: {
+                user.personalIntolerancesRaw.contains(
+                    intolerance.rawValue
+                )
+            },
+            set: { isSelected in
+                user.personalIntolerancesRaw.removeAll {
+                    $0 == intolerance.rawValue
+                }
+
+                if isSelected {
+                    user.personalIntolerancesRaw.append(
+                        intolerance.rawValue
+                    )
+                }
+
+                model.save()
+            }
+        )
+    }
+
+    // MARK: - Household Intolerance Binding
+
+    private func binding(
+        for intolerance: Intolerance
+    ) -> Binding<Bool> {
         let preferences = model.preferences
+
         return Binding(
-            get: { preferences.intolerancesRaw.contains(intolerance.rawValue) },
+            get: {
+                preferences.intolerancesRaw.contains(
+                    intolerance.rawValue
+                )
+            },
             set: { isOn in
-                preferences.intolerancesRaw.removeAll { $0 == intolerance.rawValue }
-                if isOn { preferences.intolerancesRaw.append(intolerance.rawValue) }
+                preferences.intolerancesRaw.removeAll {
+                    $0 == intolerance.rawValue
+                }
+
+                if isOn {
+                    preferences.intolerancesRaw.append(
+                        intolerance.rawValue
+                    )
+                }
             }
         )
     }

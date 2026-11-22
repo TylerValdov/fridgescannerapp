@@ -30,9 +30,12 @@ struct RootView: View {
         Group {
             if let auth {
                 if let account = auth.account {
-                    // A new Account object per sign-in, so each user starts fresh.
-                    ContentView(account: account)
-                        .id(ObjectIdentifier(account))
+                    if account.user.needsDietaryOnboarding == true {
+                        DietaryOnboardingView(user: account.user)
+                    } else {
+                        ContentView(account: account)
+                            .id(ObjectIdentifier(account))
+                    }
                 } else {
                     SignInView()
                 }

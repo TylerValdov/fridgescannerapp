@@ -41,6 +41,7 @@ private struct RecipeSearchPage: Decodable {
     let results: [RecipeMatch]
 }
 
+
 struct RecipeDetails: Decodable {
     let id: Int
     let title: String
@@ -51,7 +52,14 @@ struct RecipeDetails: Decodable {
     let instructions: String?
     let sourceUrl: String?
     let extendedIngredients: [RecipeDetailIngredient]?
+
+    // Dietary information from Spoonacular
+    let vegetarian: Bool?
+    let vegan: Bool?
+    let glutenFree: Bool?
+    let dairyFree: Bool?
 }
+
 
 struct RecipeDetailIngredient: Decodable, Identifiable {
     let name: String?           // Plain name, e.g. "eggs"
@@ -234,14 +242,30 @@ private struct MockRecipe: Decodable {
     let dairyFree: Bool
     let extendedIngredients: [Ingredient]
 
+    
     var details: RecipeDetails {
         RecipeDetails(
-            id: id, title: title, image: image,
-            readyInMinutes: readyInMinutes, servings: servings,
-            summary: summary, instructions: instructions, sourceUrl: sourceUrl,
-            extendedIngredients: extendedIngredients.map { RecipeDetailIngredient(name: $0.name, original: $0.original) }
+            id: id,
+            title: title,
+            image: image,
+            readyInMinutes: readyInMinutes,
+            servings: servings,
+            summary: summary,
+            instructions: instructions,
+            sourceUrl: sourceUrl,
+            extendedIngredients: extendedIngredients.map {
+                RecipeDetailIngredient(
+                    name: $0.name,
+                    original: $0.original
+                )
+            },
+            vegetarian: vegetarian,
+            vegan: vegan,
+            glutenFree: glutenFree,
+            dairyFree: dairyFree
         )
     }
+
 
     /// Splits the recipe's ingredients into what the fridge has and what's missing.
     func match(against fridge: [String]) -> RecipeMatch {

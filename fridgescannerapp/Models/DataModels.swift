@@ -73,6 +73,12 @@ final class User {
     var passwordSalt: Data
     var roleRaw: String
     var household: Household?
+    
+    var personalDietRaw: String = ""
+    var personalIntolerancesRaw: [String] = []
+
+    var needsDietaryOnboarding: Bool? = nil
+
 
     @Relationship(deleteRule: .cascade, inverse: \SavedRecipe.user)
     var savedRecipes: [SavedRecipe] = []

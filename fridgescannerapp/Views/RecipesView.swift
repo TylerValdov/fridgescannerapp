@@ -45,6 +45,12 @@ struct RecipesView: View {
     private var listContent: some View {
         Section {
             Label(pluralize("ingredient", count: model.ingredients.count) + " in your fridge", systemImage: "carrot")
+            Label(
+                model.personalPreferencesSummary,
+                systemImage: "person.crop.circle"
+            )
+            .foregroundStyle(.secondary)
+
             preferencesButton
             Button {
                 Task { await model.search() }
@@ -88,7 +94,11 @@ struct RecipesView: View {
 
     @ViewBuilder
     private func recipeRow(for recipe: RecipeMatch) -> some View {
-        let row = RecipeRow(recipe: recipe, isFavorite: history.isLiked(recipe))
+        let row = RecipeRow(
+            recipe: recipe,
+            isFavorite: history.isLiked(recipe),
+            warnings: model.dietaryWarnings(for: recipe)
+        )
         if selection != nil {
             // iPad: tapping selects the row, and its details show beside the list.
             row.tag(recipe)
@@ -110,10 +120,14 @@ struct RecipesView: View {
                 isShowingPreferences = true
             }
         } label: {
-            Label(model.preferences.summary ?? "No meal preferences set", systemImage: "slider.horizontal.3")
-                .foregroundStyle(.secondary)
+            Label(
+                "Household rules: " + (model.preferences.summary ?? "None set"),
+                systemImage: "slider.horizontal.3"
+            ).foregroundStyle(.secondary)
         }
-        .accessibilityLabel("Meal preferences: \(model.preferences.summary ?? "none set")")
+        .accessibilityLabel(
+            "Household preferences: \(model.preferences.summary ?? "none set")"
+        )
     }
 
     @ViewBuilder
@@ -138,6 +152,7 @@ struct RecipesView: View {
 private struct RecipeRow: View {
     let recipe: RecipeMatch
     let isFavorite: Bool
+    let warnings: [String]
 
     var body: some View {
         HStack {
@@ -157,6 +172,22 @@ private struct RecipeRow: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
+                
+                if !warnings.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(warnings, id: \.self) { warning in
+                            Label(
+                                warning,
+                                systemImage: "exclamationmark.triangle.fill"
+                            )
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .padding(.top, 4)
+                }
+
             }
 
             if isFavorite {

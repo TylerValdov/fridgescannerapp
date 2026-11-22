@@ -297,6 +297,284 @@ final class RecipeSearchModel {
         return Array(Set(missing)).sorted()
     }
 
+    // MARK: - Personal Dietary Restrictions
+
+    /// Checks a recipe against the signed-in user's preferences.
+    /// Returns a warning for each confirmed dietary conflict.
+    func dietaryWarnings(for details: RecipeDetails) -> [String] {
+        let user = account.user
+        var warnings: [String] = []
+
+        // Check the selected diet.
+        let diet = Diet(rawValue: user.personalDietRaw)
+            ?? .noPreference
+
+        switch diet {
+        case .vegetarian, .lactoVegetarian, .ovoVegetarian:
+            if details.vegetarian == false {
+                warnings.append(
+                    "This recipe is not vegetarian."
+                )
+            }
+
+        case .vegan:
+            if details.vegan == false {
+                warnings.append(
+                    "This recipe is not vegan."
+                )
+            }
+
+        case .glutenFree:
+            if details.glutenFree == false {
+                warnings.append(
+                    "This recipe is not gluten-free."
+                )
+            }
+
+        default:
+            break
+        }
+
+        // Check supported food intolerances.
+        for intolerance in user.personalIntolerancesRaw {
+            switch intolerance {
+            case "dairy":
+                if details.dairyFree == false {
+                    warnings.append(
+                        "This recipe contains dairy or is not dairy-free."
+                    )
+                }
+
+            case "gluten":
+                if details.glutenFree == false {
+                    warnings.append(
+                        "This recipe is not gluten-free."
+                    )
+                }
+
+            default:
+                break
+            }
+        }
+
+        return warnings
+    }
+
+    // MARK: - Personal Dietary Preferences
+
+    var personalPreferencesSummary: String {
+        let user = account.user
+        let diet = Diet(rawValue: user.personalDietRaw)
+            ?? .noPreference
+
+        var parts: [String] = []
+
+        if diet != .noPreference {
+            parts.append(diet.displayName)
+        }
+
+        for intolerance in user.personalIntolerancesRaw.sorted() {
+            parts.append("No \(intolerance.capitalized)")
+        }
+
+        return parts.isEmpty
+            ? "No personal dietary restrictions"
+            : parts.joined(separator: " · ")
+    }
+
+    // Checks ingredients returned in recipe search results.
+    // These are detected conflicts, not an allergy-safety guarantee.
+    func dietaryWarnings(for recipe: RecipeMatch) -> [String] {
+        let user = account.user
+        let diet = Diet(rawValue: user.personalDietRaw)
+            ?? .noPreference
+
+        let names = (recipe.usedIngredients +
+            recipe.missedIngredients).map {
+                $0.name.lowercased()
+            }
+
+        // Match whole words or phrases to reduce false matches.
+        func has(_ term: String) -> Bool {
+            names.contains { name in
+                let cleaned = name
+                    .replacingOccurrences(
+                        of: "[^a-z0-9]+",
+                        with: " ",
+                        options: .regularExpression
+                    )
+                return (" " + cleaned + " ")
+                    .contains(" " + term + " ")
+            }
+        }
+
+        func hasAny(_ terms: [String]) -> Bool {
+            terms.contains(where: has)
+        }
+
+        let meat = [
+            "chicken", "beef", "pork", "bacon",
+            "ham", "turkey", "sausage", "lamb",
+            "steak", "pepperoni", "gelatin",
+            "chicken broth", "beef broth"
+        ]
+
+        let seafood = [
+            "fish", "salmon", "tuna", "shrimp",
+            "crab", "lobster", "anchovy",
+            "anchovies", "cod", "tilapia",
+            "oyster", "clams", "scallops"
+        ]
+
+        let dairy = [
+            "butter", "cheese", "cream",
+            "heavy cream", "sour cream",
+            "yogurt", "whey", "parmesan",
+            "mozzarella", "cheddar", "ghee"
+        ]
+
+        let eggs = ["egg", "eggs", "egg yolk", "egg white"]
+
+        var warnings: [String] = []
+
+        switch diet {
+        case .vegetarian, .lactoVegetarian, .ovoVegetarian:
+            if hasAny(meat + seafood) {
+                warnings.append(
+                    "Contains meat or seafood — not vegetarian."
+                )
+            }
+
+        case .vegan:
+            if hasAny(meat + seafood + dairy + eggs + ["honey"]) {
+                warnings.append(
+                    "Contains animal-derived ingredients — not vegan."
+                )
+            }
+
+        case .pescetarian:
+            if hasAny(meat) {
+                warnings.append(
+                    "Contains meat — not pescetarian."
+                )
+            }
+
+        case .glutenFree:
+            if hasAny([
+                "wheat",
+                "wheat flour",
+                "all purpose flour",
+                "all-purpose flour",
+                "flour",
+                "bread",
+                "bread crumbs",
+                "breadcrumbs",
+                "pasta",
+                "spaghetti",
+                "noodles",
+                "barley",
+                "rye",
+                "semolina",
+                "couscous",
+                "bulgur",
+                "seitan",
+                "malt"
+            ]) {
+                warnings.append(
+                    "Contains ingredients that may contain gluten — not suitable for a gluten-free diet."
+                )
+            }
+        default:
+            break
+        }
+
+        for intolerance in user.personalIntolerancesRaw {
+            switch intolerance {
+            case "dairy":
+                let animalMilk = names.contains { name in
+                    let plantMilks = [
+                        "almond milk", "soy milk",
+                        "oat milk", "coconut milk",
+                        "rice milk", "cashew milk"
+                    ]
+                    return (name == "milk" ||
+                            name.contains("whole milk") ||
+                            name.contains("cow's milk")) &&
+                        !plantMilks.contains(where: name.contains)
+                }
+
+                if hasAny(dairy) || animalMilk {
+                    warnings.append("Contains dairy ingredients.")
+                }
+
+            case "egg":
+                if hasAny(eggs) {
+                    warnings.append("Contains eggs.")
+                }
+
+            case "peanut":
+                if hasAny(["peanut", "peanuts", "peanut butter"]) {
+                    warnings.append("Contains peanuts.")
+                }
+
+            case "tree nut":
+                if hasAny([
+                    "almond", "almonds", "cashew",
+                    "cashews", "walnut", "walnuts",
+                    "pecan", "pecans", "pistachio",
+                    "hazelnut", "macadamia"
+                ]) {
+                    warnings.append("Contains tree nuts.")
+                }
+
+            case "soy":
+                if hasAny(["soy", "soybeans", "tofu", "soy sauce"]) {
+                    warnings.append("Contains soy ingredients.")
+                }
+
+            case "sesame":
+                if hasAny(["sesame", "tahini"]) {
+                    warnings.append("Contains sesame.")
+                }
+
+            case "seafood", "shellfish":
+                if hasAny(seafood) {
+                    warnings.append("Contains seafood.")
+                }
+
+            case "gluten", "wheat":
+                if hasAny([
+                    "wheat",
+                    "wheat flour",
+                    "flour",
+                    "bread",
+                    "bread crumbs",
+                    "breadcrumbs",
+                    "pasta",
+                    "spaghetti",
+                    "noodles",
+                    "barley",
+                    "rye",
+                    "semolina",
+                    "couscous",
+                    "bulgur",
+                    "seitan",
+                    "malt"
+                ]) {
+                    warnings.append(
+                        "Contains ingredients that may contain gluten or wheat."
+                    )
+                }
+                
+            default:
+                // Other restrictions require additional recipe data.
+                break
+            }
+        }
+
+        return Array(Set(warnings)).sorted()
+    }
+
     func save() {
         try? modelContext.save()
     }

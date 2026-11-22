@@ -81,6 +81,7 @@ final class AuthModel {
         }
 
         let user = User(username: username, displayName: displayName, credential: makeCredential(for: password), role: role)
+        user.needsDietaryOnboarding = true
         household.addMember(user, in: context)
         try context.save()
         account = Account.make(for: user)

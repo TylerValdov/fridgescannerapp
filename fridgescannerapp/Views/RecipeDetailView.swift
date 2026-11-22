@@ -36,7 +36,34 @@ struct RecipeDetailView: View {
                     Text(title)
                         .font(.largeTitle)
                         .fontWeight(.bold)
+                    
+                    if let details {
+                        let warnings = model.dietaryWarnings(for: details)
 
+                        if !warnings.isEmpty {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Label(
+                                    "Dietary Warning",
+                                    systemImage: "exclamationmark.triangle.fill"
+                                )
+                                .font(.headline)
+
+                                ForEach(warnings, id: \.self) { warning in
+                                    Text("• \(warning)")
+                                        .font(.subheadline)
+                                }
+                            }
+                            .foregroundStyle(.red)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(
+                                Color.red.opacity(0.08),
+                                in: RoundedRectangle(cornerRadius: 12)
+                            )
+                        }
+                    }
+
+                    
                     HStack(spacing: 16) {
                         if let minutes = details?.readyInMinutes {
                             Label(
