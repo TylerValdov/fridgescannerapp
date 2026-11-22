@@ -7,7 +7,7 @@
 //  The main app for a signed-in account. iPhone gets a tab bar; iPad (or any
 //  wide window) gets a sidebar, so each platform has its own layout.
 //  iPhone shows 5 tabs (any more would add a "More" tab), so Preferences
-//  lives inside Household there. The iPad sidebar lists all 6 sections, and
+//  lives inside Household there. The iPad sidebar lists all 7 sections, and
 //  iPad gets its own Home (KitchenDashboardView) and Recipes (RecipeBrowserView).
 //
 
@@ -16,7 +16,7 @@ import SwiftData
 
 /// The app's sections, shown as tabs on iPhone and sidebar rows on iPad.
 enum AppSection: String, CaseIterable, Identifiable {
-    case home, fridge, recipes, shopping, household, preferences
+    case home, fridge, recipes, shopping, household, preferences, stores
 
     var id: Self { self }
 
@@ -29,6 +29,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .fridge: "Fridge"
         case .recipes: "Recipes"
         case .shopping: "Shopping"
+        case .stores: "Stores"
         case .household: "Household"
         case .preferences: "Preferences"
         }
@@ -40,6 +41,7 @@ enum AppSection: String, CaseIterable, Identifiable {
         case .fridge: "refrigerator"
         case .recipes: "fork.knife"
         case .shopping: "cart"
+        case .stores: "map"
         case .household: "person.3"
         case .preferences: "slider.horizontal.3"
         }
@@ -137,6 +139,8 @@ struct ContentView: View {
             }
         case .shopping:
             NavigationStack { ShoppingListView() }
+        case .stores:
+            NavigationStack { NearbyStoresView() }
         case .household:
             NavigationStack { HouseholdView() }
         case .preferences:
